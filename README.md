@@ -1,34 +1,72 @@
 # Kirchenbirkiger Schluck
 
-C#-Anwendung zur Verwaltung und grafischen Darstellung des Turnierverlaufs beim Kirchenbirkiger Schluck.
+C#/WPF-Anwendung zur Turnierleitung und Zuschaueranzeige beim gleichnamigen Heimturnier.
+
+## Was ist das?
+
+Der **Kirchenbirkiger Schluck** ist ein jährliches Heimturnier. Diese Anwendung ersetzt den bisherigen
+Excel-Spielplan durch eine dedizierte Software mit zwei getrennten Oberflächen:
+
+| Oberfläche | Zweck |
+|---|---|
+| **Bedienoberfläche** | Turnierleitung: Spielplan, Ergebniseingabe, Korrekturen |
+| **Anzeigeoberfläche** | Beamer/Zuschauer: Spielstand live, Gruppenrangliste, Bracket, Siegeranzeige |
+
+Der Turnierverlauf besteht aus einer **Gruppenphase** (Round-Robin) gefolgt von einer **Finalrunde**.
+
+## Technologie
+
+| Komponente | Entscheidung |
+|---|---|
+| Sprache | C# 12 / .NET 8 |
+| UI-Framework | WPF + MaterialDesignThemes 5.3 |
+| MVVM | CommunityToolkit.Mvvm 8.4 |
+| Persistenz | JSON via System.Text.Json |
+| Tests | xUnit + FluentAssertions |
+| DI | Microsoft.Extensions.DependencyInjection |
 
 ## Projektstruktur
 
 ```
 Kirchenbirkiger-Schluck/
-├── docs/
-│   ├── 00_Projektstart/       Ziele, Entscheidungen, offene Fragen
-│   ├── 01_Anforderungen/      Funktionale und nicht-funktionale Anforderungen
-│   ├── 02_Fachkonzept/        Turniermodus, Spielregeln, Wertungslogik
-│   ├── 03_UI_UX/              Oberflächen, Screens, Designrichtlinie
-│   ├── 04_Technik/            Architektur, Datenmodell, Technologieentscheidung
-│   ├── 05_Test_und_Abnahme/   Testszenarien, Beispielturniere, Abnahmeliste
-│   ├── 06_Betrieb/            Aufbau, Bedienanleitung, Notfallplan
-│   └── 99_Archiv/             Veraltete Dokumente
-├── assets/
-│   ├── logo/                  Projektlogo
-│   ├── screenshots/           Anwendungs-Screenshots
-│   └── mockups/               UI-Mockups und Wireframes
-├── quellen/
-│   ├── einladungen/           Einladungen vergangener Turniere
-│   └── excel_alt/             Alter Excel-Spielplan als Referenz
-└── src/                       Quellcode (C#)
+├── src/                           Quellcode
+│   ├── KirchenbirkigerSchluck.App/     WPF-Anwendung (Bedien- & Anzeigeoberfläche)
+│   ├── KirchenbirkigerSchluck.Core/    Domänenmodelle, Interfaces, Services
+│   ├── KirchenbirkigerSchluck.Data/    JSON-Persistenz, Backup, Migration
+│   └── KirchenbirkigerSchluck.Tests/   xUnit-Tests
+├── docs/                          Vollständige Projektdokumentation
+│   ├── 02_Fachkonzept/            Spielregeln, Wertungslogik, Turniermodus
+│   ├── 04_Technik/                Architektur, Datenmodell, Speicherformat
+│   └── ...
+├── assets/                        Logo, Screenshots, Mockups
+├── quellen/                       Referenzmaterial (Excel-Altdaten, Einladungen)
+└── CLAUDE.md                      Hinweise für KI-gestützte Entwicklung
 ```
 
-## Schnellstart
+## Build & Start
 
-> TODO: Installationsanleitung und erste Schritte ergänzen.
+```powershell
+# Alle Projekte bauen
+dotnet build src/
+
+# Anwendung starten
+dotnet run --project src/KirchenbirkigerSchluck.App
+
+# Tests ausführen
+dotnet test src/
+
+# Einzelnen Testbereich ausführen
+dotnet test src/ --filter "FullyQualifiedName~Wertung"
+dotnet test src/ --filter "FullyQualifiedName~Spielsteuerung"
+dotnet test src/ --filter "FullyQualifiedName~Spielplan"
+```
+
+## Implementierungsstand
+
+Aktueller Stand: siehe [docs/Implementierungsstand.md](docs/Implementierungsstand.md).
 
 ## Dokumentation
 
 Die vollständige Projektdokumentation befindet sich im [docs/](docs/)-Verzeichnis.
+Fachliche Regeln (Spielablauf, Wertungslogik, Sonderfälle) sind in
+[docs/02_Fachkonzept/](docs/02_Fachkonzept/) beschrieben.

@@ -1,14 +1,16 @@
 # Quellen
 
-Dieses Verzeichnis enthält externe Quelldateien und Referenzmaterial.
+Externes Referenzmaterial, das zur Entwicklung und Konzeption herangezogen wurde.
+Diese Dateien sind **nicht Teil der Anwendung** – sie dienen ausschließlich als Grundlage.
 
 ## Inhalt
 
-| Verzeichnis | Inhalt |
-|-------------|--------|
-| [einladungen/](einladungen/) | Einladungsschreiben vergangener Turniere |
-| [excel_alt/](excel_alt/) | Alter Excel-Spielplan als Referenz |
+| Verzeichnis | Inhalt | Verwendungszweck |
+|---|---|---|
+| `einladungen/` | Einladungsschreiben vergangener Turniere | Verstehen der Turnierstruktur, Team-Anzahl, Zeitplan |
+| `excel_alt/` | Alter Excel-Spielplan als Referenz | Ausgangspunkt der Digitalisierung; zeigt Wertungslogik und Spielplan-Format |
 
-## Hinweis
+## Hinweis zur Datenschutz
 
-Diese Dateien dienen ausschließlich als Referenz für Entwicklung und Konzeption.
+Einladungen können Teilnehmerdaten (Namen, Kontakte) enthalten.
+Diese Dateien werden **nicht öffentlich geteilt** und bleiben lokal.
