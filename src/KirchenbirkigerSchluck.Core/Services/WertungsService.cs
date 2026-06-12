@@ -49,7 +49,9 @@ public class WertungsService : IWertungsService
             .ToDictionary(id => id, id => new GruppenTabellenEintrag { TeamId = id });
 
         var gewerteteSpiele = gruppe.Spiele
-            .Where(s => s.Status == SpielStatus.Abgeschlossen && s.Ergebnis is not null)
+            .Where(s => s.Status == SpielStatus.Abgeschlossen
+                     && s.Ergebnis is not null
+                     && s.Team1Id.HasValue && s.Team2Id.HasValue)
             .ToList();
 
         // Statistiken aus abgeschlossenen Spielen akkumulieren
@@ -57,23 +59,23 @@ public class WertungsService : IWertungsService
         {
             var (pts1, pts2) = TabellenPunkteBerechnen(spiel, wertungssystem);
 
-            if (eintraege.TryGetValue(spiel.Team1Id, out var e1))
+            if (spiel.Team1Id is { } t1Id && eintraege.TryGetValue(t1Id, out var e1))
             {
                 e1.Spiele++;
                 e1.Tabellenpunkte += pts1;
                 e1.DuellpunkteGewonnen += spiel.Ergebnis!.DuellpunkteTeam1;
                 e1.DuellpunkteVerloren += spiel.Ergebnis.DuellpunkteTeam2;
-                if (spiel.Ergebnis.SiegerId == spiel.Team1Id) e1.Siege++;
+                if (spiel.Ergebnis.SiegerId == t1Id) e1.Siege++;
                 else e1.Niederlagen++;
             }
 
-            if (eintraege.TryGetValue(spiel.Team2Id, out var e2))
+            if (spiel.Team2Id is { } t2Id && eintraege.TryGetValue(t2Id, out var e2))
             {
                 e2.Spiele++;
                 e2.Tabellenpunkte += pts2;
                 e2.DuellpunkteGewonnen += spiel.Ergebnis!.DuellpunkteTeam2;
                 e2.DuellpunkteVerloren += spiel.Ergebnis.DuellpunkteTeam1;
-                if (spiel.Ergebnis.SiegerId == spiel.Team2Id) e2.Siege++;
+                if (spiel.Ergebnis.SiegerId == t2Id) e2.Siege++;
                 else e2.Niederlagen++;
             }
         }
@@ -115,11 +117,12 @@ public class WertungsService : IWertungsService
             var subPunkte = gleichstandTeams.ToDictionary(id => id, _ => 0);
 
             foreach (var spiel in gewerteteSpiele.Where(s =>
-                gleichstandTeams.Contains(s.Team1Id) && gleichstandTeams.Contains(s.Team2Id)))
+                s.Team1Id.HasValue && gleichstandTeams.Contains(s.Team1Id.Value) &&
+                s.Team2Id.HasValue && gleichstandTeams.Contains(s.Team2Id.Value)))
             {
                 var (pts1, pts2) = TabellenPunkteBerechnen(spiel, wertungssystem);
-                subPunkte[spiel.Team1Id] += pts1;
-                subPunkte[spiel.Team2Id] += pts2;
+                subPunkte[spiel.Team1Id!.Value] += pts1;
+                subPunkte[spiel.Team2Id!.Value] += pts2;
             }
 
             // Positionen der Gleichstand-Teams in der Hauptliste merken

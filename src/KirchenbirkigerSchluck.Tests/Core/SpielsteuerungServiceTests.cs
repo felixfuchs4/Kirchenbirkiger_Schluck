@@ -221,7 +221,7 @@ public class SpielsteuerungServiceTests
         // Assert
         spiel.Status.Should().Be(SpielStatus.Abgeschlossen);
         spiel.Ergebnis.Should().NotBeNull();
-        spiel.Ergebnis!.SiegerId.Should().Be(spiel.Team1Id);
+        spiel.Ergebnis!.SiegerId.Should().Be(spiel.Team1Id!.Value);
         spiel.Ergebnis.EntschiedenDurch.Should().Be(EntscheidungsArt.RegulaereSpielzeit);
         spiel.Ergebnis.DuellpunkteTeam1.Should().Be(3);
         spiel.Ergebnis.DuellpunkteTeam2.Should().Be(2);

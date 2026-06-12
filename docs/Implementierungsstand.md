@@ -1,6 +1,6 @@
 # Implementierungsstand – Kirchenbirkiger Schluck
 
-> **Stand:** 2026-06-12 | Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 43/43 grün
+> **Stand:** 2026-06-12 | Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 51/51 grün
 
 ---
 
@@ -21,7 +21,7 @@
 |---|---|---|
 | `WertungsService` | `TabellenPunkteBerechnen`, `GruppenRanglisteBerechnen` (inkl. Direkter-Vergleich-Tiebreaker + Stechen-Markierung) | **8** |
 | `SpielsteuerungService` | `SpielStarten`, `NaechesDuellStarten`, `StechenStarten`, `VersuchErfassen`, `SpielAbschliessen` | **8** |
-| `SpielplanService` | `GruppenspielplanGenerieren` (Round-Robin, interleaved), `NaechstesSpielErmitteln`, `SpielNachHintenVerschieben` | **6** |
+| `SpielplanService` | `GruppenspielplanGenerieren` (Round-Robin, interleaved), `NaechstesSpielErmitteln`, `SpielNachHintenVerschieben`, `FinalrundeGenerieren` (KoBaumEin/KoBaumZwei/Kurz), `BracketFortsetzungAktualisieren` | **14** |
 
 ### Services & Klassen – Data
 
@@ -75,10 +75,19 @@ Tests: EintragErstellen (Felder, Begruendung null), EintraegeAbfragen (Filter, S
 
 ---
 
-### Schritt D – FinalrundeGenerieren ⛔ *blockiert*
+### Schritt D – FinalrundeGenerieren ✅ *(abgeschlossen)*
 
-`SpielplanService.FinalrundeGenerieren()` – Fachkonzept für Finalrundenstruktur ist noch nicht spezifiziert.
-Erst implementieren, wenn Anzahl Weiterkommer, Bracket-Aufbau und Platzierungsspiele festgelegt sind.
+| Methode | Beschreibung |
+|---|---|
+| `FinalrundeGenerieren()` – Modus `Kurz` | Gleichplatzierte aus beiden Gruppen direkt gegeneinander (A1 vs B1, A2 vs B2, …) |
+| `FinalrundeGenerieren()` – Modus `KoBaumEin` | Cross-geseedeter KO-Baum (Achtelfinale → Viertelfinale → Halbfinale → Finale); alle Spiele sofort generiert, TBD-Slots mit `null`-Team-IDs und `VorgaengerSpielId` |
+| `FinalrundeGenerieren()` – Modus `KoBaumZwei` | Wie `KoBaumEin`, aber zwei separate Brackets ohne gemeinsames Finale |
+| `BracketFortsetzungAktualisieren()` | Trägt Sieger eines abgeschlossenen Bracket-Spiels automatisch in die Folgerunde ein |
+
+Modeländerungen: `Spiel.Team1Id/Team2Id` → `Guid?` (nullable), `VorgaengerSpiel1Id/2Id`, `BracketRunde` ergänzt.
+`FinalrundenModus`-Enum (`KoBaumEin`, `KoBaumZwei`, `Kurz`) neu angelegt.
+
+Tests: Kurz_ZweiGruppen_ErzeugtKorrektePaarungen, Kurz_AnzahlSpieleEntsprichtKleinstenGruppe, KoBaum_ZweiGruppenJe6_ErzeugtVierAchtelfinaleSpiele, KoBaum_ZweiGruppenJe6_ErzeugtViertelfinaleAlsPlatzhalter, KoBaum_ZweiGruppenJe6_KoBaumEin_ErzeugtFinale, KoBaum_ZweiGruppenJe6_KoBaumZwei_KeinFinale, KoBaum_ZweiGruppenJe5_ErzeugtZweiAchtelfinaleSpiele, BracketFortsetzung_TraegtSiegerInNaechsteRunde
 
 ---
 
@@ -118,6 +127,6 @@ Enums / Modelle / Interfaces  (fertig ✅)
               ▼
          Schritt F            (UI)
 
-Schritt D  ──── blockiert (Fachkonzept fehlt)
+Schritt D  ──── fertig ✅ (FinalrundeGenerieren + BracketFortsetzung)
 Schritt E  ──── niedrige Priorität (V2)
 ```

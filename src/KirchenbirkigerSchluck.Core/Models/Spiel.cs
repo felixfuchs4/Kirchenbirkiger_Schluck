@@ -36,11 +36,35 @@ public class Spiel
     /// <summary>Laufende Spielnummer innerhalb der Gruppenphase oder Finalrunde.</summary>
     public int Spielnummer { get; set; }
 
-    /// <summary>Id von Team 1 (in der Spielplan-Reihenfolge).</summary>
-    public Guid Team1Id { get; set; }
+    /// <summary>
+    /// Id von Team 1 (in der Spielplan-Reihenfolge).
+    /// Null bei Bracket-Platzhaltern, solange der Teilnehmer noch nicht feststeht.
+    /// </summary>
+    public Guid? Team1Id { get; set; }
 
-    /// <summary>Id von Team 2 (in der Spielplan-Reihenfolge).</summary>
-    public Guid Team2Id { get; set; }
+    /// <summary>
+    /// Id von Team 2 (in der Spielplan-Reihenfolge).
+    /// Null bei Bracket-Platzhaltern, solange der Teilnehmer noch nicht feststeht.
+    /// </summary>
+    public Guid? Team2Id { get; set; }
+
+    /// <summary>
+    /// Id des Vorgängerspiels, dessen Sieger als Team 1 in dieses Spiel einzieht.
+    /// Null bei Gruppenspielen oder wenn Team 1 bereits feststeht (Freilos / direkte Setzung).
+    /// </summary>
+    public Guid? VorgaengerSpiel1Id { get; set; }
+
+    /// <summary>
+    /// Id des Vorgängerspiels, dessen Sieger als Team 2 in dieses Spiel einzieht.
+    /// Null bei Gruppenspielen oder wenn Team 2 bereits feststeht.
+    /// </summary>
+    public Guid? VorgaengerSpiel2Id { get; set; }
+
+    /// <summary>
+    /// Bezeichnung der Bracket-Runde, z. B. „Achtelfinale", „Halbfinale", „Finale".
+    /// Null bei Gruppenspielen.
+    /// </summary>
+    public string? BracketRunde { get; set; }
 
     /// <summary>Aktueller Status der Partie.</summary>
     public SpielStatus Status { get; set; } = SpielStatus.Geplant;

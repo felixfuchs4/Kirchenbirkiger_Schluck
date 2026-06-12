@@ -111,7 +111,8 @@ public class SpielsteuerungService : ISpielsteuerungService
         int dp1 = abgeschlosseneDuelle.Sum(d => d.Ergebnis!.DuellpunktTeam1);
         int dp2 = abgeschlosseneDuelle.Sum(d => d.Ergebnis!.DuellpunktTeam2);
 
-        Guid siegerId = dp1 >= dp2 ? spiel.Team1Id : spiel.Team2Id;
+        // Team-IDs sind bei laufenden Spielen immer gesetzt
+        Guid siegerId = dp1 >= dp2 ? spiel.Team1Id!.Value : spiel.Team2Id!.Value;
 
         // Stechen liegt vor, wenn mindestens ein Duell als Stechen markiert wurde
         var art = spiel.Einzelduelle.Any(d => d.IstStechen)

@@ -41,6 +41,9 @@ public class Turnier
     /// <summary>Gewähltes Punktesystem für die Tabellenwertung.</summary>
     public Wertungssystem Wertungssystem { get; set; } = Wertungssystem.Eishockey;
 
+    /// <summary>Spielmodus der Finalrunde.</summary>
+    public FinalrundenModus FinalrundenModus { get; set; } = FinalrundenModus.KoBaumEin;
+
     /// <summary>Aktueller Fortschrittsstand des Turniers.</summary>
     public TurnierStatus Status { get; set; } = TurnierStatus.InVorbereitung;
 

@@ -97,8 +97,174 @@ public class SpielplanService : ISpielplanService
     }
 
     /// <inheritdoc/>
+    /// <exception cref="InvalidOperationException">Das Turnier hat weniger als zwei Gruppen.</exception>
     public void FinalrundeGenerieren(Turnier turnier)
-        => throw new NotImplementedException();
+    {
+        if (turnier.Gruppen.Count < 2)
+            throw new InvalidOperationException(
+                "Die Finalrunde benötigt mindestens zwei Gruppen.");
+
+        var wertung = new WertungsService();
+
+        // Gruppen-Rankings als geordnete Team-Id-Listen (bester → schlechtester)
+        var a = wertung.GruppenRanglisteBerechnen(turnier.Gruppen[0], turnier.Wertungssystem)
+                       .Select(e => e.TeamId).ToList();
+        var b = wertung.GruppenRanglisteBerechnen(turnier.Gruppen[1], turnier.Wertungssystem)
+                       .Select(e => e.TeamId).ToList();
+
+        turnier.Finalrundenspiele.Clear();
+
+        int nr = AlleSpiele(turnier).Select(s => s.Spielnummer).DefaultIfEmpty(0).Max() + 1;
+
+        if (turnier.FinalrundenModus == FinalrundenModus.Kurz)
+            GenerierenKurz(turnier, a, b, ref nr);
+        else
+            GenerierenKoBaum(turnier, a, b, ref nr);
+    }
+
+    /// <inheritdoc/>
+    public void BracketFortsetzungAktualisieren(Turnier turnier, Spiel abgeschlossenesSpiel)
+    {
+        if (abgeschlossenesSpiel.Ergebnis is null)
+            return;
+
+        var siegerId = abgeschlossenesSpiel.Ergebnis.SiegerId;
+
+        foreach (var spiel in turnier.Finalrundenspiele)
+        {
+            if (spiel.VorgaengerSpiel1Id == abgeschlossenesSpiel.Id)
+                spiel.Team1Id = siegerId;
+
+            if (spiel.VorgaengerSpiel2Id == abgeschlossenesSpiel.Id)
+                spiel.Team2Id = siegerId;
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Private Hilfsmethoden – Finalrunden-Generierung
+    // ---------------------------------------------------------------------------
+
+    /// <summary>
+    /// Kurze Finalrunde: Gleichplatzierte aus beiden Gruppen spielen direkt gegeneinander.
+    /// </summary>
+    private static void GenerierenKurz(Turnier turnier, List<Guid> a, List<Guid> b, ref int nr)
+    {
+        int anzahl = Math.Min(a.Count, b.Count);
+        for (int i = 0; i < anzahl; i++)
+        {
+            turnier.Finalrundenspiele.Add(new Spiel
+            {
+                Team1Id      = a[i],
+                Team2Id      = b[i],
+                Spielnummer  = nr++,
+                BracketRunde = $"Platz {i * 2 + 1}/{i * 2 + 2}",
+                Status       = SpielStatus.Geplant
+            });
+        }
+    }
+
+    /// <summary>
+    /// KO-Turnierbaum: obere Hälfte (Gruppe A primär) und untere Hälfte (Gruppe B primär).
+    /// Generiert alle Runden sofort; Folgerunden erhalten Platzhalter (Team1Id/Team2Id = null).
+    /// </summary>
+    private static void GenerierenKoBaum(Turnier turnier, List<Guid> a, List<Guid> b, ref int nr)
+    {
+        // Obere Hälfte: a[0]=A1 Freilos, a[1]=A2 Freilos, a[2..3] spielen gegen B-Füller von unten
+        // Untere Hälfte: b[0]=B1 Freilos, b[1]=B2 Freilos, b[2..3] spielen gegen A-Füller von unten
+
+        // B-Füller für obere Hälfte: b[n-2], b[n-1] (die schwächsten B-Teams, die NICHT Primärspieler sind)
+        var bFueller = b.Skip(4).ToList();  // B5, B6 für n=6
+        // A-Füller für untere Hälfte: a[n-2], a[n-1] (die schwächsten A-Teams)
+        var aFueller = a.Skip(4).ToList();  // A5, A6 für n=6
+
+        // Achtelfinale – obere Hälfte: A3/A4 vs B6/B5
+        var topAchtel = new List<Spiel>();
+        var aPlayer = a.Skip(2).Take(2).ToList();  // A3, A4
+        for (int i = 0; i < Math.Min(aPlayer.Count, bFueller.Count); i++)
+        {
+            var spiel = ErstelleSpiel(aPlayer[i], bFueller[bFueller.Count - 1 - i],
+                                      null, null, "Achtelfinale", nr++);
+            topAchtel.Add(spiel);
+            turnier.Finalrundenspiele.Add(spiel);
+        }
+
+        // Achtelfinale – untere Hälfte: B3/B4 vs A6/A5
+        var bottomAchtel = new List<Spiel>();
+        var bPlayer = b.Skip(2).Take(2).ToList();  // B3, B4
+        for (int i = 0; i < Math.Min(bPlayer.Count, aFueller.Count); i++)
+        {
+            var spiel = ErstelleSpiel(bPlayer[i], aFueller[aFueller.Count - 1 - i],
+                                      null, null, "Achtelfinale", nr++);
+            bottomAchtel.Add(spiel);
+            turnier.Finalrundenspiele.Add(spiel);
+        }
+
+        // Viertelfinale – obere Hälfte
+        // VF-TL: A2 (Freilos) vs Sieger(Achtelfinale-Top-0)
+        var vfTL = ErstelleSpiel(
+            team1: a.Count > 1 ? a[1] : null,
+            team2: topAchtel.Count > 0 ? null : (a.Count > 2 ? a[2] : null),
+            vorg1: null,
+            vorg2: topAchtel.Count > 0 ? topAchtel[0].Id : null,
+            runde: "Viertelfinale", nr: nr++);
+
+        // VF-TR: Sieger(Achtelfinale-Top-1) vs A1 (Freilos)
+        var vfTR = ErstelleSpiel(
+            team1: topAchtel.Count > 1 ? null : (a.Count > 3 ? a[3] : null),
+            team2: a.Count > 0 ? a[0] : null,
+            vorg1: topAchtel.Count > 1 ? topAchtel[1].Id : null,
+            vorg2: null,
+            runde: "Viertelfinale", nr: nr++);
+
+        // Viertelfinale – untere Hälfte
+        // VF-BL: B2 (Freilos) vs Sieger(Achtelfinale-Bottom-0)
+        var vfBL = ErstelleSpiel(
+            team1: b.Count > 1 ? b[1] : null,
+            team2: bottomAchtel.Count > 0 ? null : (b.Count > 2 ? b[2] : null),
+            vorg1: null,
+            vorg2: bottomAchtel.Count > 0 ? bottomAchtel[0].Id : null,
+            runde: "Viertelfinale", nr: nr++);
+
+        // VF-BR: Sieger(Achtelfinale-Bottom-1) vs B1 (Freilos)
+        var vfBR = ErstelleSpiel(
+            team1: bottomAchtel.Count > 1 ? null : (b.Count > 3 ? b[3] : null),
+            team2: b.Count > 0 ? b[0] : null,
+            vorg1: bottomAchtel.Count > 1 ? bottomAchtel[1].Id : null,
+            vorg2: null,
+            runde: "Viertelfinale", nr: nr++);
+
+        turnier.Finalrundenspiele.AddRange([vfTL, vfTR, vfBL, vfBR]);
+
+        // Halbfinale
+        var hfTop = ErstelleSpiel(null, null, vfTL.Id, vfTR.Id, "Halbfinale", nr++);
+        var hfBot = ErstelleSpiel(null, null, vfBL.Id, vfBR.Id, "Halbfinale", nr++);
+        turnier.Finalrundenspiele.AddRange([hfTop, hfBot]);
+
+        // Finale – nur für KoBaumEin
+        if (turnier.FinalrundenModus == FinalrundenModus.KoBaumEin)
+        {
+            turnier.Finalrundenspiele.Add(
+                ErstelleSpiel(null, null, hfTop.Id, hfBot.Id, "Finale", nr++));
+        }
+    }
+
+    /// <summary>
+    /// Erstellt ein einzelnes Finalrundenspiel mit Bracket-Metadaten.
+    /// </summary>
+    private static Spiel ErstelleSpiel(
+        Guid? team1, Guid? team2,
+        Guid? vorg1, Guid? vorg2,
+        string runde, int nr)
+        => new Spiel
+        {
+            Team1Id            = team1,
+            Team2Id            = team2,
+            VorgaengerSpiel1Id = vorg1,
+            VorgaengerSpiel2Id = vorg2,
+            BracketRunde       = runde,
+            Spielnummer        = nr,
+            Status             = SpielStatus.Geplant
+        };
 
     /// <summary>
     /// Gibt alle Spiele des Turniers zurück (Gruppenspiele aller Gruppen + Finalrundenspiele).

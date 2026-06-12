@@ -36,4 +36,12 @@ public interface ISpielplanService
     /// <param name="turnier">Das Turnierobjekt.</param>
     /// <param name="spielId">Id des zu verschiebenden Spiels.</param>
     void SpielNachHintenVerschieben(Turnier turnier, Guid spielId);
+
+    /// <summary>
+    /// Trägt nach Abschluss eines Finalrundenspiels den Sieger automatisch in die
+    /// Folgerunde des Brackets ein (setzt Team1Id bzw. Team2Id des nächsten Spiels).
+    /// </summary>
+    /// <param name="turnier">Das Turnierobjekt.</param>
+    /// <param name="abgeschlossenesSpiel">Das soeben abgeschlossene Finalrundenspiel.</param>
+    void BracketFortsetzungAktualisieren(Turnier turnier, Spiel abgeschlossenesSpiel);
 }
