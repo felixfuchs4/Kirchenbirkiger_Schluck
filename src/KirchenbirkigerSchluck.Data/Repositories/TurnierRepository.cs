@@ -7,6 +7,7 @@
  *************************************************************/
 
 using System.Text.Json;
+using KirchenbirkigerSchluck.Core.Interfaces;
 using KirchenbirkigerSchluck.Core.Models;
 using KirchenbirkigerSchluck.Data.Serialization;
 
@@ -15,7 +16,7 @@ namespace KirchenbirkigerSchluck.Data.Repositories;
 /// <summary>
 /// Liest und schreibt das <see cref="Turnier"/>-Objekt aus/in eine JSON-Datei.
 /// </summary>
-public class TurnierRepository
+public class TurnierRepository : ITurnierRepository
 {
     private readonly string _dateipfad;
 

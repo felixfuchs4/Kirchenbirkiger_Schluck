@@ -1,6 +1,6 @@
 # Implementierungsstand – Kirchenbirkiger Schluck
 
-> **Stand:** 2026-06-12 | Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 29/29 grün
+> **Stand:** 2026-06-12 | Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 37/37 grün
 
 ---
 
@@ -12,7 +12,7 @@
 |---|---|
 | **Enums** (5) | `TurnierStatus`, `SpielStatus`, `TeamStatus`, `Wertungssystem`, `EntscheidungsArt` |
 | **Modelle** (10) | `Turnier`, `Gruppe`, `Team`, `Spieler`, `Spiel`, `SpielErgebnis`, `Einzelduell`, `EinzelduellErgebnis`, `Versuch`, `Aenderungseintrag` |
-| **Interfaces** (5) | `ITurnierService`, `ISpielsteuerungService`, `ISpielplanService`, `IWertungsService` (+ `GruppenTabellenEintrag`), `IAenderungsprotokollService` |
+| **Interfaces** (6) | `ITurnierService`, `ITurnierRepository`, `ISpielsteuerungService`, `ISpielplanService`, `IWertungsService` (+ `GruppenTabellenEintrag`), `IAenderungsprotokollService` |
 | **App-Scaffolding** | `App.xaml`, `BedienWindow` (Placeholder), `AnzeigeWindow` (Placeholder) |
 
 ### Services – Core
@@ -29,6 +29,7 @@
 |---|---|---|
 | `BackupManager` | `DateinameGenerieren`, `DateinameSanitieren`, `BackupErstellen`, `AlleDateien` | **4** |
 | `TurnierRepository` | `Laden`, `Speichern`, `ExistiertDatei` | **3** |
+| `TurnierService` | `TurnierErstellen`, `TurnierLaden`, `TurnierSpeichern`, `StatusWechseln`, `TeamHinzufuegen`, `TeamZurueckziehen` | **8** |
 | `SchemaMigration` | `MigrationErforderlich`, `AktuelleVersion` (trivial) | – |
 
 ---
@@ -48,17 +49,17 @@ Tests: TurnierRepository JSON-Roundtrip (inkl. Sonderzeichen, fehlende Datei), B
 
 ---
 
-### Schritt B – TurnierService *(nach Schritt A)*
+### Schritt B – TurnierService ✅ *(abgeschlossen)*
 
 | Methode | Beschreibung |
 |---|---|
 | `TurnierErstellen()` | Neues Turnier mit Defaults anlegen |
-| `TurnierLaden()` / `TurnierSpeichern()` | Delegation an `TurnierRepository` |
+| `TurnierLaden()` / `TurnierSpeichern()` | Delegation an `ITurnierRepository` |
 | `StatusWechseln()` | Zustandsautomat: `InVorbereitung` → `Gruppenphase` → `Finalrunde` → `Abgeschlossen` |
 | `TeamHinzufuegen()` | Team erstellen und zu `Turnier.Teams` hinzufügen |
-| `TeamZurueckziehen()` | `TeamStatus.Zurückgezogen`, offene Spiele → `Abgesetzt` |
+| `TeamZurueckziehen()` | `TeamStatus.Zurueckgezogen`, offene Spiele → `Abgesetzt` |
 
-Tests: TurnierErstellen, TeamHinzufuegen, TeamZurueckziehen, StatusWechseln
+Tests: TurnierErstellen, TeamHinzufuegen (mit/ohne Kurzname), TeamZurueckziehen (Status + Spiele), StatusWechseln (3 Übergänge + Exception)
 
 ---
 
