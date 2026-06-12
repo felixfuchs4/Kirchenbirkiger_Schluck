@@ -1,6 +1,6 @@
 /*************************************************************
  * Datei:        AenderungsprotokollService.cs
- * Zweck:        Stub-Implementierung des IAenderungsprotokollService
+ * Zweck:        Implementierung des Änderungsprotokolls
  * Bereich:      Anwendungslogik – Revisionsverwaltung
  * Ersteller:    Kirchenbirkiger Schluck Entwicklungsteam
  * Urheberrecht: Copyright (c) 2026
@@ -25,9 +25,26 @@ public class AenderungsprotokollService : IAenderungsprotokollService
         string? alterWert,
         string neuerWert,
         string? begruendung = null)
-        => throw new NotImplementedException();
+    {
+        var eintrag = new Aenderungseintrag
+        {
+            Entitaet    = entitaet,
+            EntitaetId  = entitaetId,
+            Feld        = feld,
+            AlterWert   = alterWert,
+            NeuerWert   = neuerWert,
+            Begruendung = begruendung
+        };
+        turnier.Aenderungsprotokoll.Add(eintrag);
+    }
 
     /// <inheritdoc/>
     public IReadOnlyList<Aenderungseintrag> EintraegeAbfragen(Turnier turnier, Guid entitaetId)
-        => throw new NotImplementedException();
+    {
+        return turnier.Aenderungsprotokoll
+            .Where(e => e.EntitaetId == entitaetId)
+            .OrderByDescending(e => e.ZeitpunktUtc)
+            .ToList()
+            .AsReadOnly();
+    }
 }

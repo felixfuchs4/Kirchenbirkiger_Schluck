@@ -1,6 +1,6 @@
 # Implementierungsstand – Kirchenbirkiger Schluck
 
-> **Stand:** 2026-06-12 | Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 37/37 grün
+> **Stand:** 2026-06-12 | Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 43/43 grün
 
 ---
 
@@ -30,6 +30,7 @@
 | `BackupManager` | `DateinameGenerieren`, `DateinameSanitieren`, `BackupErstellen`, `AlleDateien` | **4** |
 | `TurnierRepository` | `Laden`, `Speichern`, `ExistiertDatei` | **3** |
 | `TurnierService` | `TurnierErstellen`, `TurnierLaden`, `TurnierSpeichern`, `StatusWechseln`, `TeamHinzufuegen`, `TeamZurueckziehen` | **8** |
+| `AenderungsprotokollService` | `EintragErstellen`, `EintraegeAbfragen` | **6** |
 | `SchemaMigration` | `MigrationErforderlich`, `AktuelleVersion` (trivial) | – |
 
 ---
@@ -63,14 +64,14 @@ Tests: TurnierErstellen, TeamHinzufuegen (mit/ohne Kurzname), TeamZurueckziehen 
 
 ---
 
-### Schritt C – AenderungsprotokollService *(nach Schritt A)*
+### Schritt C – AenderungsprotokollService ✅ *(abgeschlossen)*
 
 | Methode | Beschreibung |
 |---|---|
 | `EintragErstellen()` | `Aenderungseintrag` anlegen + an `Turnier.Aenderungsprotokoll` appenden |
 | `EintraegeAbfragen()` | Einträge für eine Entität filtern, absteigend nach Zeitstempel |
 
-Tests: EintragErstellen, EintraegeAbfragen
+Tests: EintragErstellen (Felder, Begruendung null), EintraegeAbfragen (Filter, Sortierung, leere Liste)
 
 ---
 
