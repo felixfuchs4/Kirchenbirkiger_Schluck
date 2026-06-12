@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="KirchenbirkigerSchluck.App/KirchenbirkigerSchluck.App.csproj" />
+  <Project Path="KirchenbirkigerSchluck.Core/KirchenbirkigerSchluck.Core.csproj" />
+  <Project Path="KirchenbirkigerSchluck.Data/KirchenbirkigerSchluck.Data.csproj" />
+  <Project Path="KirchenbirkigerSchluck.Tests/KirchenbirkigerSchluck.Tests.csproj" />
+</Solution>
