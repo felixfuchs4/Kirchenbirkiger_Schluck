@@ -1,0 +1,46 @@
+# Build-Ausgaben
+bin/
+obj/
+out/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# NuGet
+*.nupkg
+*.snupkg
+*.nuget/
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Testabdeckung
+TestResults/
+coverage/
+*.coveragexml
+*.coverage
+
+# Temporäre Dateien
+*.tmp
+*.bak
+*.swp
+*~
+
+# Turnier-Laufzeitdaten (werden zur Laufzeit erzeugt, nicht versioniert)
+turnier.json
+backups/
+
+# Betriebssystem
+Thumbs.db
+Desktop.ini
+.DS_Store

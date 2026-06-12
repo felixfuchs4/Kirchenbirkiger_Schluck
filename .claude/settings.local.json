@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet new *)",
+      "Bash(dotnet sln *)",
+      "Bash(dotnet add *)",
+      "Bash(Get-ChildItem -Path \"d:\\\\Documents\\\\Projekte\\\\Kirchenbirkiger_Schluck\\\\src\" -Recurse -Name -Filter \"*.xaml\",\"*.cs\",\"*.csproj\")",
+      "Bash(dir \"d:\\\\Documents\\\\Projekte\\\\Kirchenbirkiger_Schluck\\\\src\" /s /b)",
+      "Bash(git config *)"
+    ]
+  }
+}
