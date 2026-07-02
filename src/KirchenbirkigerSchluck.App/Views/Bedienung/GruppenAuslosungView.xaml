@@ -1,7 +1,8 @@
 <UserControl x:Class="KirchenbirkigerSchluck.App.Views.Bedienung.GruppenAuslosungView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:gemeinsam="clr-namespace:KirchenbirkigerSchluck.App.Views.Gemeinsam">
     <!--
         Datei:   GruppenAuslosungView.xaml
         Zweck:   Animierte Gruppenauslosung (DFB-Pokal-Stil) und Einteilungsübersicht
@@ -10,16 +11,16 @@
     <UserControl.Resources>
         <!-- Team-Kugel mit Einpop-Animation beim Erscheinen -->
         <Style x:Key="TeamKugelStyle" TargetType="Border">
-            <Setter Property="Background" Value="White" />
+            <Setter Property="Background" Value="{StaticResource PinselFlaecheAktiv}" />
             <Setter Property="CornerRadius" Value="22" />
             <Setter Property="Padding" Value="16,10" />
             <Setter Property="Margin" Value="0,5" />
-            <Setter Property="BorderBrush" Value="#D1C4E9" />
+            <Setter Property="BorderBrush" Value="{StaticResource PinselRand}" />
             <Setter Property="BorderThickness" Value="1.5" />
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
             <Setter Property="Effect">
                 <Setter.Value>
-                    <DropShadowEffect Color="#5E35B1" BlurRadius="10" ShadowDepth="0" Opacity="0.18" />
+                    <DropShadowEffect Color="{StaticResource FarbeViolett700}" BlurRadius="10" ShadowDepth="0" Opacity="0.18" />
                 </Setter.Value>
             </Setter>
             <Setter Property="RenderTransform">
@@ -73,7 +74,7 @@
                                Style="{StaticResource MaterialDesignHeadline6TextBlock}" />
                     <TextBlock Text="{Binding StatusText}"
                                Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                               Foreground="Gray"
+                               Foreground="{StaticResource PinselTextGedaempft}"
                                TextWrapping="Wrap"
                                MaxWidth="520"
                                Margin="0,2,0,0" />
@@ -143,20 +144,20 @@
                 Visibility="{Binding ZiehungLaeuft, Converter={StaticResource BoolToVisibility}}">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                    <GradientStop Color="#311B92" Offset="0" />
-                    <GradientStop Color="#5E35B1" Offset="1" />
+                    <GradientStop Color="{StaticResource FarbeViolett700}" Offset="0" />
+                    <GradientStop Color="{StaticResource FarbeViolett500}" Offset="1" />
                 </LinearGradientBrush>
             </Border.Background>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <materialDesign:PackIcon Kind="Monitor" Width="32" Height="32"
-                                         Foreground="#FFC84B"
+                                         Foreground="{StaticResource PinselAkzent}"
                                          VerticalAlignment="Center" Margin="0,0,16,0" />
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="Die Auslosung läuft am Beamer"
                                Foreground="White"
                                FontSize="20" FontWeight="Bold" />
                     <TextBlock Text="Bitte die Animation auf der Anzeige abwarten – die Gruppen werden danach automatisch eingetragen."
-                               Foreground="#D9CCF2"
+                               Foreground="White" Opacity="0.85"
                                FontSize="13"
                                TextWrapping="Wrap"
                                MaxWidth="520" />
@@ -168,9 +169,11 @@
         <Grid Grid.Row="2" Margin="0,16,0,0">
 
             <!-- Platzhalter, wenn noch nichts ausgelost -->
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <StackPanel.Style>
-                    <Style TargetType="StackPanel">
+            <gemeinsam:LeererZustand Symbol="ShuffleVariant"
+                                     Titel="Noch keine Auslosung"
+                                     Hinweis="Anzahl Gruppen wählen und die Auslosung starten.">
+                <gemeinsam:LeererZustand.Style>
+                    <Style TargetType="gemeinsam:LeererZustand">
                         <Setter Property="Visibility" Value="Collapsed" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding Gruppen.Count}" Value="0">
@@ -178,21 +181,8 @@
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
-                </StackPanel.Style>
-                <materialDesign:PackIcon Kind="ShuffleVariant"
-                                         Width="72" Height="72"
-                                         Foreground="#CCCCCC"
-                                         HorizontalAlignment="Center" />
-                <TextBlock Text="Noch keine Auslosung"
-                           Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                           Foreground="Gray"
-                           HorizontalAlignment="Center"
-                           Margin="0,12,0,0" />
-                <TextBlock Text="Anzahl Gruppen wählen und die Auslosung starten."
-                           Foreground="Gray"
-                           HorizontalAlignment="Center"
-                           Margin="0,4,0,0" />
-            </StackPanel>
+                </gemeinsam:LeererZustand.Style>
+            </gemeinsam:LeererZustand>
 
             <!-- Gruppen-Spalten -->
             <ItemsControl ItemsSource="{Binding Gruppen}">
@@ -211,13 +201,8 @@
                                 </Grid.RowDefinitions>
 
                                 <!-- Gruppen-Kopf -->
-                                <Border Grid.Row="0" Padding="16,12" CornerRadius="4,4,0,0">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#5E35B1" Offset="0" />
-                                            <GradientStop Color="#7E57C2" Offset="1" />
-                                        </LinearGradientBrush>
-                                    </Border.Background>
+                                <Border Grid.Row="0" Padding="16,12" CornerRadius="4,4,0,0"
+                                        Background="{StaticResource VerlaufSekundaer}">
                                     <Grid>
                                         <TextBlock Text="{Binding Name}"
                                                    Foreground="White"
@@ -238,7 +223,7 @@
                                             <DataTemplate>
                                                 <Border Style="{StaticResource TeamKugelStyle}">
                                                     <StackPanel Orientation="Horizontal">
-                                                        <Ellipse Width="10" Height="10" Fill="#5E35B1"
+                                                        <Ellipse Width="10" Height="10" Fill="{StaticResource PinselSekundaerHell}"
                                                                  VerticalAlignment="Center" Margin="0,0,12,0" />
                                                         <TextBlock Text="{Binding}"
                                                                    FontWeight="SemiBold" FontSize="15"

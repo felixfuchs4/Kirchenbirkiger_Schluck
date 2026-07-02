@@ -1,0 +1,111 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ================================================================
+         Datei:   04_Bedienung.xaml
+         Zweck:   Dunkles Theme der Bedienoberfläche:
+                  1) Überschreibt MaterialDesign-Flächen mit den
+                     Marken-Nachttönen (statt Material-Grau).
+                  2) Gemeinsame Komponenten-Styles der Bedien-Views.
+         Bereich: Präsentation – Designsystem
+         Hinweis: Muss NACH dem MaterialDesign-Theme gemergt werden,
+                  damit die Überschreibungen greifen.
+    ================================================================ -->
+
+    <!-- ════════════════════════════════════════════════════════════════
+         MATERIALDESIGN-ÜBERSCHREIBUNGEN – Markentöne statt Grau
+    ═════════════════════════════════════════════════════════════════ -->
+
+    <!-- Fenster-/Seitenhintergrund -->
+    <SolidColorBrush x:Key="MaterialDesign.Brush.Background" Color="{StaticResource FarbeNacht850}" />
+
+    <!-- Kartenflächen (materialDesign:Card) -->
+    <SolidColorBrush x:Key="MaterialDesign.Brush.Card.Background" Color="{StaticResource FarbeFlaeche800}" />
+
+    <!-- ════════════════════════════════════════════════════════════════
+         GEMEINSAME KOMPONENTEN DER BEDIEN-VIEWS
+    ═════════════════════════════════════════════════════════════════ -->
+
+    <!-- Status-Pille für Spielzustände (Spielplan) -->
+    <Style x:Key="StatusPillStyle" TargetType="Border">
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusPille}" />
+        <Setter Property="Padding" Value="12,4" />
+        <Setter Property="Background" Value="{StaticResource PinselFlaecheAktiv}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Status}" Value="Läuft">
+                <Setter Property="Background" Value="{StaticResource PinselErfolg}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Status}" Value="Abgeschlossen">
+                <Setter Property="Background" Value="{StaticResource PinselInfo}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Status}" Value="Verschoben">
+                <Setter Property="Background" Value="{StaticResource PinselWarnung}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Status}" Value="Abgesetzt">
+                <Setter Property="Background" Value="{StaticResource PinselGefahr}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Text innerhalb einer Status-Pille (dunkel für Kontrast auf Statusfarben) -->
+    <Style x:Key="StatusPillTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource PinselTextAufAkzent}" />
+    </Style>
+
+    <!-- Spielplan-Zeile: nächstes Spiel goldgetönt, laufendes grün getönt,
+         erledigte/abgesetzte Spiele abgedimmt -->
+    <Style x:Key="SpielZeileStyle" TargetType="Border">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusS}" />
+        <Setter Property="Margin" Value="8,3" />
+        <Setter Property="Padding" Value="12,8" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IstNaechstes}" Value="True">
+                <Setter Property="Background" Value="#26FFC84B" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Status}" Value="Läuft">
+                <Setter Property="Background" Value="#264CAF50" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Status}" Value="Abgeschlossen">
+                <Setter Property="Opacity" Value="0.55" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Status}" Value="Korrigiert">
+                <Setter Property="Opacity" Value="0.55" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Status}" Value="Abgesetzt">
+                <Setter Property="Opacity" Value="0.3" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Eingerückte, dezente Info-Fläche (Hinweise, Hilfetexte) -->
+    <Style x:Key="HinweisFlaecheStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource PinselFlaecheDunkel}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinselTrennlinie}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusS}" />
+        <Setter Property="Padding" Value="{StaticResource Abstand12}" />
+    </Style>
+
+    <!-- Nächstes-Spiel-Button (groß, prominent) -->
+    <Style x:Key="NaechstesSpielButtonStyle" TargetType="Button">
+        <Setter Property="Height" Value="56" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,0,0,12" />
+    </Style>
+
+    <!-- Versuch-Button (4 Buttons im 2×2-Grid) – groß für schnelle Bedienung -->
+    <Style x:Key="VersuchButtonStyle" TargetType="Button"
+           BasedOn="{StaticResource MaterialDesignRaisedButton}">
+        <Setter Property="Height" Value="72" />
+        <Setter Property="Margin" Value="4" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+</ResourceDictionary>

@@ -5,12 +5,15 @@
         Datei:   AuslosungView.xaml
         Zweck:   Animierte Gruppenauslosung für das Publikum (Lostrommel, Kugeln, Enthüllung)
         Bereich: Präsentation – Anzeige-Views
+        Hinweis: Die Farbwerte des Bühnenbilds (Loskugel-Halbschalen, Trommel-
+                 Kugeln, Glasreflexe) sind bewusst lokale Einmal-Werte und
+                 keine Design-Tokens.
     -->
     <UserControl.Resources>
         <!-- Team-Chip in der Gruppenspalte, poppt beim Erscheinen ein -->
         <Style x:Key="GruppenTeamChipStyle" TargetType="Border">
-            <Setter Property="Background" Value="#22203F" />
-            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Background" Value="{StaticResource PinselFlaecheErhaben}" />
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusM}" />
             <Setter Property="Padding" Value="12,8" />
             <Setter Property="Margin" Value="0,4" />
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
@@ -40,7 +43,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid Background="{StaticResource AnzeigeHintergrund}">
+    <Grid Background="{StaticResource VerlaufAnzeigeHintergrund}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -77,14 +80,8 @@
                     <!-- Sanfter Lichtschein hinter der Kugel -->
                     <Ellipse Width="420" Height="420"
                              HorizontalAlignment="Center" VerticalAlignment="Center"
-                             Opacity="0.22">
-                        <Ellipse.Fill>
-                            <RadialGradientBrush>
-                                <GradientStop Color="#FFC84B" Offset="0.0" />
-                                <GradientStop Color="#00FFC84B" Offset="1.0" />
-                            </RadialGradientBrush>
-                        </Ellipse.Fill>
-                    </Ellipse>
+                             Opacity="0.22"
+                             Fill="{StaticResource GoldSchein}" />
 
                     <!-- Die Loskugel -->
                     <Grid x:Name="BallContainer" Width="200" Height="200"
@@ -101,11 +98,11 @@
                         <!-- Enthüllungskarte (hinter den Halbschalen) -->
                         <Border x:Name="EnthuellKarte"
                                 Width="190" Height="190"
-                                CornerRadius="20"
+                                CornerRadius="{StaticResource RadiusL}"
                                 Background="#FFFFFF"
                                 Opacity="0"
                                 RenderTransformOrigin="0.5,0.5"
-                                Effect="{StaticResource GoldGlow}">
+                                Effect="{StaticResource GlowGold}">
                             <Border.RenderTransform>
                                 <ScaleTransform x:Name="KarteScale" ScaleX="0" ScaleY="0" />
                             </Border.RenderTransform>
@@ -116,7 +113,7 @@
                                        Margin="0,0,0,6"
                                        Visibility="{Binding HatAktuellesLogo, Converter={StaticResource BoolToVisibility}}" />
                                 <TextBlock Text="{Binding AktuellerTeamName}"
-                                           Foreground="#1A1A2E"
+                                           Foreground="{StaticResource PinselTextAufAkzent}"
                                            FontSize="22" FontWeight="Bold"
                                            TextAlignment="Center" TextWrapping="Wrap"
                                            HorizontalAlignment="Center" />
@@ -169,9 +166,9 @@
                 <Grid Grid.Row="1" Width="300" Height="300"
                       HorizontalAlignment="Center" Margin="0,10,0,0">
                     <!-- Ständer -->
-                    <Rectangle Width="14" Height="60" Fill="#2A2750"
+                    <Rectangle Width="14" Height="60" Fill="{StaticResource PinselFlaecheAktiv}"
                                VerticalAlignment="Bottom" HorizontalAlignment="Center" />
-                    <Rectangle Width="120" Height="16" RadiusX="6" RadiusY="6" Fill="#2A2750"
+                    <Rectangle Width="120" Height="16" RadiusX="6" RadiusY="6" Fill="{StaticResource PinselFlaecheAktiv}"
                                VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,-2" />
 
                     <!-- Glaskugel der Trommel -->
@@ -240,13 +237,8 @@
                                 </Grid.RowDefinitions>
 
                                 <!-- Gruppenkopf -->
-                                <Border Grid.Row="0" CornerRadius="20,20,0,0" Padding="16,14">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#5E35B1" Offset="0" />
-                                            <GradientStop Color="#7E57C2" Offset="1" />
-                                        </LinearGradientBrush>
-                                    </Border.Background>
+                                <Border Grid.Row="0" CornerRadius="16,16,0,0" Padding="16,14"
+                                        Background="{StaticResource VerlaufSekundaer}">
                                     <TextBlock Text="{Binding Name}"
                                                Foreground="White"
                                                FontSize="24" FontWeight="Bold"
@@ -268,7 +260,7 @@
                                                                    Stretch="Uniform" Margin="3" />
                                                         </Border>
                                                         <TextBlock Text="{Binding Name}"
-                                                                   Foreground="{StaticResource AnzeigeText}"
+                                                                   Foreground="{StaticResource PinselText}"
                                                                    FontSize="19" FontWeight="SemiBold"
                                                                    VerticalAlignment="Center"
                                                                    TextWrapping="Wrap" />

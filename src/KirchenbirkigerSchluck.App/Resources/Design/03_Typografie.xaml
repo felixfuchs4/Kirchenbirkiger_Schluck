@@ -1,0 +1,117 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ================================================================
+         Datei:   03_Typografie.xaml
+         Zweck:   Typografie-Rampen beider Oberflächen.
+                  Anzeige (Beamer): 22 / 26 / 34 / 44 / 84 / 110 / 120 –
+                  Minimum 22 px für Lesbarkeit auf Distanz.
+                  Bedienung: 12 / 13 / 15 / 24 – ergänzend zur
+                  MaterialDesign-Rampe.
+         Bereich: Präsentation – Designsystem
+    ================================================================ -->
+
+    <!-- ════════════════════════════════════════════════════════════════
+         ANZEIGE (Beamer) – große, kontrastreiche Broadcast-Typografie
+    ═════════════════════════════════════════════════════════════════ -->
+
+    <!-- Großer Score-Text (Matchday-Header) – mit goldenem Glühen -->
+    <Style x:Key="ScoreTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SchriftAnzeige}" />
+        <Setter Property="FontSize" Value="120" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{StaticResource VerlaufAkzent}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Effect" Value="{StaticResource GlowGold}" />
+    </Style>
+
+    <!-- Team-Name auf Matchday-Screen (groß) -->
+    <Style x:Key="TeamNameAnzeigeStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SchriftAnzeige}" />
+        <Setter Property="FontSize" Value="44" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{StaticResource PinselText}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="TextAlignment" Value="Center" />
+    </Style>
+
+    <!-- Überschrift Anzeige (z. B. Turniername, Screen-Titel) -->
+    <Style x:Key="UeberschriftAnzeigeStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SchriftAnzeige}" />
+        <Setter Property="FontSize" Value="34" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{StaticResource PinselAkzent}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="Effect" Value="{StaticResource GlowGoldSanft}" />
+    </Style>
+
+    <!-- Uhrzeit-Anzeige (Startscreen) -->
+    <Style x:Key="UhrzeitStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SchriftAnzeige}" />
+        <Setter Property="FontSize" Value="110" />
+        <Setter Property="FontWeight" Value="Thin" />
+        <Setter Property="Foreground" Value="{StaticResource PinselText}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Normaler Anzeigetext -->
+    <Style x:Key="AnzeigeTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SchriftAnzeige}" />
+        <Setter Property="FontSize" Value="26" />
+        <Setter Property="Foreground" Value="{StaticResource PinselText}" />
+    </Style>
+
+    <!-- Gedämpfter Anzeigetext – 22 px Minimum für Distanz-Lesbarkeit -->
+    <Style x:Key="AnzeigeTextGedaempftStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SchriftAnzeige}" />
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="Foreground" Value="{StaticResource PinselTextGedaempft}" />
+    </Style>
+
+    <!-- Sieger-Hervorhebung (Gewinner-Screen) -->
+    <Style x:Key="SiegerHervorhebungStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SchriftAnzeige}" />
+        <Setter Property="FontSize" Value="84" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{StaticResource VerlaufAkzent}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="TextAlignment" Value="Center" />
+        <Setter Property="Effect" Value="{StaticResource GlowGold}" />
+    </Style>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         BEDIENUNG – kompakte Werkzeug-Typografie
+    ═════════════════════════════════════════════════════════════════ -->
+
+    <!-- Seitentitel eines Bedien-Tabs -->
+    <Style x:Key="BedienSeitentitelStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource PinselText}" />
+    </Style>
+
+    <!-- Untertitel/Beschreibung unter dem Seitentitel -->
+    <Style x:Key="BedienUntertitelStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{StaticResource PinselTextGedaempft}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <!-- Abschnittstitel innerhalb einer Karte -->
+    <Style x:Key="BedienAbschnittstitelStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource PinselText}" />
+    </Style>
+
+    <!-- Hinweis-/Hilfetext -->
+    <Style x:Key="BedienHinweisStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{StaticResource PinselTextGedaempft}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+</ResourceDictionary>

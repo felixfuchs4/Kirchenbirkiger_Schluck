@@ -6,6 +6,7 @@
  * Urheberrecht: Copyright (c) 2026
  *************************************************************/
 
+using System.IO;
 using System.Windows;
 using KirchenbirkigerSchluck.App.Services;
 using KirchenbirkigerSchluck.App.ViewModels;
@@ -34,6 +35,16 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Feste, beschreibbare Datenablage einrichten: %LOCALAPPDATA%\KirchenbirkigerSchluck.
+        // Alle relativen Laufzeitpfade (turnier.json, backups/, logos/) lösen gegen das
+        // Arbeitsverzeichnis auf; durch das Setzen hier landen sie unabhängig vom Startort
+        // stets im selben Ordner. So bleibt die Ordnerstruktur bei Installer-Betrieb konstant.
+        var datenVerzeichnis = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "KirchenbirkigerSchluck");
+        Directory.CreateDirectory(datenVerzeichnis);
+        Environment.CurrentDirectory = datenVerzeichnis;
 
         var services = new ServiceCollection();
         DienstRegistrieren(services);

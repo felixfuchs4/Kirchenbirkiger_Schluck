@@ -4,9 +4,9 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:vmBedienung="clr-namespace:KirchenbirkigerSchluck.App.ViewModels.Bedienung"
         xmlns:viewsBedienung="clr-namespace:KirchenbirkigerSchluck.App.Views.Bedienung"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
         TextElement.FontSize="14"
-        Background="{DynamicResource MaterialDesignPaper}"
+        Background="{DynamicResource MaterialDesign.Brush.Background}"
         FontFamily="{materialDesign:MaterialDesignFont}"
         Title="Kirchenbirkiger Schluck – Turnierleitung"
         Height="800" Width="1280"
@@ -55,7 +55,7 @@
         </Grid.ColumnDefinitions>
 
         <!-- ── Linke Navigationsleiste ────────────────────────────────── -->
-        <Border Grid.Column="0" Background="#1E1A38">
+        <Border Grid.Column="0" Background="{StaticResource PinselNavigation}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -68,18 +68,18 @@
                 <Border Grid.Row="0" Padding="24,28,24,24">
                     <StackPanel>
                         <Border Width="44" Height="4"
-                                Background="#FFC84B"
+                                Background="{StaticResource PinselAkzent}"
                                 CornerRadius="2"
                                 HorizontalAlignment="Left"
                                 Margin="0,0,0,16" />
                         <TextBlock Text="Kirchenbirkiger"
-                                   Foreground="#F5F5FA"
+                                   Foreground="{StaticResource PinselText}"
                                    FontSize="20" FontWeight="Bold" />
                         <TextBlock Text="Schluck"
-                                   Foreground="#FFC84B"
+                                   Foreground="{StaticResource PinselAkzent}"
                                    FontSize="20" FontWeight="Bold" />
                         <TextBlock Text="TURNIERLEITUNG"
-                                   Foreground="#7A77A0"
+                                   Foreground="{StaticResource PinselTextGedaempft}"
                                    FontSize="11" FontWeight="SemiBold"
                                    Margin="0,8,0,0" />
                     </StackPanel>
@@ -100,26 +100,83 @@
                         <Style TargetType="TabItem">
                             <Setter Property="Height" Value="56" />
                             <Setter Property="Width" Value="220" />
-                            <Setter Property="Foreground" Value="#B0AECC" />
+                            <Setter Property="Foreground" Value="{StaticResource PinselTextGedaempft}" />
                             <Setter Property="Template">
                                 <Setter.Value>
+                                    <!-- Flächen als Ebenen: Hover und Selektion blenden
+                                         weich über Opacity ein (kein Layout-Sprung) -->
                                     <ControlTemplate TargetType="TabItem">
-                                        <Border x:Name="Wurzel"
-                                                Background="Transparent"
-                                                BorderBrush="Transparent"
-                                                BorderThickness="4,0,0,0">
+                                        <Grid>
+                                            <Border x:Name="HoverFlaeche"
+                                                    Background="{StaticResource PinselFlaecheHover}"
+                                                    Opacity="0" />
+                                            <Border x:Name="AktivFlaeche"
+                                                    Background="{StaticResource PinselFlaecheAktiv}"
+                                                    Opacity="0" />
+                                            <!-- Goldener Selektions-Indikator am linken Rand -->
+                                            <Border x:Name="Indikator"
+                                                    Width="4" Margin="0,12"
+                                                    HorizontalAlignment="Left"
+                                                    CornerRadius="0,2,2,0"
+                                                    Background="{StaticResource PinselAkzent}"
+                                                    Opacity="0" />
                                             <ContentPresenter ContentSource="Header"
                                                               VerticalAlignment="Center"
-                                                              Margin="20,0" />
-                                        </Border>
+                                                              Margin="24,0,20,0" />
+                                        </Grid>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Wurzel" Property="Background" Value="#2A2550" />
+                                                <Trigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="HoverFlaeche"
+                                                                             Storyboard.TargetProperty="Opacity"
+                                                                             To="1" Duration="{StaticResource DauerFlink}"
+                                                                             EasingFunction="{StaticResource EasingStandard}" />
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.EnterActions>
+                                                <Trigger.ExitActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="HoverFlaeche"
+                                                                             Storyboard.TargetProperty="Opacity"
+                                                                             To="0" Duration="{StaticResource DauerFlink}"
+                                                                             EasingFunction="{StaticResource EasingStandard}" />
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.ExitActions>
                                             </Trigger>
                                             <Trigger Property="IsSelected" Value="True">
-                                                <Setter TargetName="Wurzel" Property="Background" Value="#2E2858" />
-                                                <Setter TargetName="Wurzel" Property="BorderBrush" Value="#FFC84B" />
-                                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                                <Setter Property="Foreground" Value="{StaticResource PinselText}" />
+                                                <Trigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="AktivFlaeche"
+                                                                             Storyboard.TargetProperty="Opacity"
+                                                                             To="1" Duration="{StaticResource DauerFlink}"
+                                                                             EasingFunction="{StaticResource EasingStandard}" />
+                                                            <DoubleAnimation Storyboard.TargetName="Indikator"
+                                                                             Storyboard.TargetProperty="Opacity"
+                                                                             To="1" Duration="{StaticResource DauerFlink}"
+                                                                             EasingFunction="{StaticResource EasingStandard}" />
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.EnterActions>
+                                                <Trigger.ExitActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="AktivFlaeche"
+                                                                             Storyboard.TargetProperty="Opacity"
+                                                                             To="0" Duration="{StaticResource DauerFlink}"
+                                                                             EasingFunction="{StaticResource EasingStandard}" />
+                                                            <DoubleAnimation Storyboard.TargetName="Indikator"
+                                                                             Storyboard.TargetProperty="Opacity"
+                                                                             To="0" Duration="{StaticResource DauerFlink}"
+                                                                             EasingFunction="{StaticResource EasingStandard}" />
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.ExitActions>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -213,7 +270,7 @@
         </Border>
 
         <!-- ── Inhaltsbereich (rechts): DataTemplate-Dispatch ─────────── -->
-        <Border Grid.Column="1" Background="#F4F2F9">
+        <Border Grid.Column="1" Background="{DynamicResource MaterialDesign.Brush.Background}">
             <ContentControl Content="{Binding AktivesTabViewModel}" />
         </Border>
     </Grid>

@@ -58,7 +58,7 @@
                               Style="{StaticResource MaterialDesignOutlinedComboBox}" />
                     <TextBlock Text="Gruppen werden im Tab „Gruppen“ ausgelost."
                                Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                               Foreground="Gray"
+                               Foreground="{StaticResource PinselTextGedaempft}"
                                Margin="0,0,0,12" />
 
                     <Button Content="Turnier erstellen"
@@ -110,7 +110,7 @@
                                 Padding="8,4" />
                         <Button Command="{Binding TurnierZuruecksetzenCommand}"
                                 Style="{StaticResource MaterialDesignFlatButton}"
-                                Foreground="#C0392B"
+                                Foreground="{StaticResource PinselGefahr}"
                                 Padding="8,4"
                                 ToolTip="Setzt das Turnier in den Anfangszustand zurück. Teams und Spieler bleiben erhalten.">
                             <StackPanel Orientation="Horizontal">
@@ -121,7 +121,7 @@
                     </StackPanel>
                     <TextBlock Text="{Binding NaechsterSchrittHinweis}"
                                Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                               Foreground="{DynamicResource PrimaryHueMidBrush}"
+                               Foreground="{StaticResource PinselAkzent}"
                                TextWrapping="Wrap"
                                Margin="0,4,0,0" />
                     <Button Command="{Binding ZurGruppenauslosungCommand}"
@@ -154,7 +154,7 @@
 
                     <!-- Hinweis: Teams können nur in der Vorbereitungsphase hinzugefügt werden -->
                     <TextBlock Text="Teams können nach dem Start nicht mehr geändert werden."
-                               Foreground="Gray"
+                               Foreground="{StaticResource PinselTextGedaempft}"
                                Margin="0,0,0,12">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignCaptionTextBlock}">
@@ -206,18 +206,16 @@
                              Style="{StaticResource MaterialDesignListBox}" />
 
                     <!-- Verweis auf die dedizierte Teamverwaltung -->
-                    <Border Background="#F0ECFA"
-                            CornerRadius="6"
-                            Padding="12,10"
+                    <Border Style="{StaticResource HinweisFlaecheStyle}"
                             Margin="0,12,0,0">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="InformationOutline"
                                                      Width="20" Height="20"
                                                      VerticalAlignment="Center"
-                                                     Foreground="{DynamicResource PrimaryHueMidBrush}"
+                                                     Foreground="{StaticResource PinselSekundaerHell}"
                                                      Margin="0,0,10,0" />
                             <TextBlock TextWrapping="Wrap" VerticalAlignment="Center"
-                                       Foreground="#5E35B1">
+                                       Foreground="{StaticResource PinselSekundaerHell}">
                                 <Run Text="Spieler und Teamdetails im Tab " />
                                 <Run Text="Teamverwaltung" FontWeight="Bold" />
                                 <Run Text=" pflegen." />

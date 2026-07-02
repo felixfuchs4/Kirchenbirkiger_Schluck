@@ -3,11 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vmAnzeige="clr-namespace:KirchenbirkigerSchluck.App.ViewModels.Anzeige"
         xmlns:viewsAnzeige="clr-namespace:KirchenbirkigerSchluck.App.Views.Anzeige"
+        xmlns:verhalten="clr-namespace:KirchenbirkigerSchluck.App.Behaviors"
         Title="Kirchenbirkiger Schluck – Anzeige"
         WindowStyle="None"
         WindowState="Maximized"
         ResizeMode="NoResize"
-        Background="#0B0B1A">
+        Background="{StaticResource PinselFensterAnzeige}">
     <!--
         Datei:   AnzeigeWindow.xaml
         Zweck:   Vollbild-Fenster für Beamer/Zuschaueransicht mit Screen-Umschaltung
@@ -32,6 +33,8 @@
         </DataTemplate>
     </Window.Resources>
 
-    <!-- ContentControl zeigt automatisch den passenden UserControl für das aktive Screen-ViewModel -->
-    <ContentControl Content="{Binding AktuellerScreenViewModel}" />
+    <!-- ContentControl zeigt automatisch den passenden UserControl für das
+         aktive Screen-ViewModel; jeder Wechsel wird weich eingeblendet -->
+    <ContentControl Content="{Binding AktuellerScreenViewModel}"
+                    verhalten:ScreenUebergangVerhalten.Ausloeser="{Binding AktuellerScreenViewModel}" />
 </Window>

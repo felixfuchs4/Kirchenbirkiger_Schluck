@@ -1,7 +1,8 @@
 <UserControl x:Class="KirchenbirkigerSchluck.App.Views.Bedienung.TeamverwaltungView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:gemeinsam="clr-namespace:KirchenbirkigerSchluck.App.Views.Gemeinsam">
     <!--
         Datei:   TeamverwaltungView.xaml
         Zweck:   Dedizierte Team- und Spielerverwaltung (Details ansehen, ändern, hinzufügen)
@@ -25,13 +26,13 @@
 
                 <!-- Kopf -->
                 <Border Grid.Row="0" Padding="20,16"
-                        Background="{DynamicResource MaterialDesignToolBarBackground}">
+                        Background="{StaticResource PinselFlaecheDunkel}">
                     <StackPanel>
                         <TextBlock Text="Teams"
                                    Style="{StaticResource MaterialDesignHeadline6TextBlock}" />
                         <TextBlock Text="Team auswählen, um Details und Spieler zu bearbeiten"
                                    Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                   Foreground="Gray"
+                                   Foreground="{StaticResource PinselTextGedaempft}"
                                    TextWrapping="Wrap"
                                    Margin="0,4,0,0" />
                     </StackPanel>
@@ -48,14 +49,14 @@
                             <StackPanel Orientation="Horizontal" Margin="4,8">
                                 <!-- Logo (falls vorhanden) bzw. Platzhalter-Icon -->
                                 <Border Width="30" Height="30" CornerRadius="6"
-                                        Background="#EDE7F6" Margin="0,0,12,0"
+                                        Background="{StaticResource PinselFlaecheAktiv}" Margin="0,0,12,0"
                                         VerticalAlignment="Center">
                                     <Grid>
                                         <materialDesign:PackIcon Kind="AccountGroup"
                                                                  Width="18" Height="18"
                                                                  HorizontalAlignment="Center"
                                                                  VerticalAlignment="Center"
-                                                                 Foreground="{DynamicResource PrimaryHueMidBrush}">
+                                                                 Foreground="{StaticResource PinselAkzent}">
                                             <materialDesign:PackIcon.Style>
                                                 <Style TargetType="materialDesign:PackIcon">
                                                     <Setter Property="Visibility" Value="Collapsed" />
@@ -81,7 +82,7 @@
 
                 <!-- Team anlegen -->
                 <Border Grid.Row="2" Padding="16"
-                        Background="{DynamicResource MaterialDesignToolBarBackground}">
+                        Background="{StaticResource PinselFlaecheDunkel}">
                     <StackPanel>
                         <TextBlock Text="Neues Team"
                                    Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
@@ -99,7 +100,7 @@
                                 Style="{StaticResource MaterialDesignRaisedButton}"
                                 HorizontalAlignment="Stretch" />
                         <TextBlock Text="Teams können nur in der Vorbereitungsphase angelegt werden."
-                                   Foreground="Gray"
+                                   Foreground="{StaticResource PinselTextGedaempft}"
                                    TextWrapping="Wrap"
                                    Margin="0,8,0,0">
                             <TextBlock.Style>
@@ -122,9 +123,11 @@
         <Grid Grid.Column="2">
 
             <!-- Platzhalter, wenn kein Team gewählt -->
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <StackPanel.Style>
-                    <Style TargetType="StackPanel">
+            <gemeinsam:LeererZustand Symbol="AccountGroupOutline"
+                                     Titel="Kein Team ausgewählt"
+                                     Hinweis="Wähle links ein Team aus, um Details und Spieler zu bearbeiten.">
+                <gemeinsam:LeererZustand.Style>
+                    <Style TargetType="gemeinsam:LeererZustand">
                         <Setter Property="Visibility" Value="Visible" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding HatAusgewaehltesTeam}" Value="True">
@@ -132,21 +135,8 @@
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
-                </StackPanel.Style>
-                <materialDesign:PackIcon Kind="AccountGroupOutline"
-                                         Width="72" Height="72"
-                                         Foreground="#CCCCCC"
-                                         HorizontalAlignment="Center" />
-                <TextBlock Text="Kein Team ausgewählt"
-                           Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                           Foreground="Gray"
-                           HorizontalAlignment="Center"
-                           Margin="0,12,0,0" />
-                <TextBlock Text="Wähle links ein Team aus, um Details und Spieler zu bearbeiten."
-                           Foreground="Gray"
-                           HorizontalAlignment="Center"
-                           Margin="0,4,0,0" />
-            </StackPanel>
+                </gemeinsam:LeererZustand.Style>
+            </gemeinsam:LeererZustand>
 
             <!-- Detailbereich (nur wenn Team gewählt) -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -173,8 +163,8 @@
                                         Command="{Binding TeamEntfernenCommand}"
                                         Style="{StaticResource MaterialDesignOutlinedButton}"
                                         HorizontalAlignment="Right"
-                                        Foreground="#C0392B"
-                                        BorderBrush="#C0392B" />
+                                        Foreground="{StaticResource PinselGefahr}"
+                                        BorderBrush="{StaticResource PinselGefahr}" />
                             </Grid>
                             <Grid Margin="0,0,0,20">
                                 <Grid.ColumnDefinitions>
@@ -199,13 +189,13 @@
                             <StackPanel Orientation="Horizontal">
                                 <!-- Logo-Vorschau -->
                                 <Border Width="84" Height="84" CornerRadius="10"
-                                        Background="#F3F0FA"
-                                        BorderBrush="#D1C4E9" BorderThickness="1"
+                                        Background="{StaticResource PinselFlaecheDunkel}"
+                                        BorderBrush="{StaticResource PinselRand}" BorderThickness="1"
                                         Margin="0,0,16,0">
                                     <Grid>
                                         <materialDesign:PackIcon Kind="ImageOutline"
                                                                  Width="36" Height="36"
-                                                                 Foreground="#B0A8C8"
+                                                                 Foreground="{StaticResource PinselTextGedaempft}"
                                                                  HorizontalAlignment="Center"
                                                                  VerticalAlignment="Center">
                                             <materialDesign:PackIcon.Style>
@@ -235,7 +225,7 @@
                                     </Button>
                                     <Button Command="{Binding LogoEntfernenCommand}"
                                             Style="{StaticResource MaterialDesignFlatButton}"
-                                            Foreground="#C0392B"
+                                            Foreground="{StaticResource PinselGefahr}"
                                             HorizontalAlignment="Left"
                                             Padding="8,4">
                                         <StackPanel Orientation="Horizontal">
@@ -245,7 +235,7 @@
                                     </Button>
                                     <TextBlock Text="PNG mit transparentem Hintergrund empfohlen."
                                                Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                               Foreground="Gray"
+                                               Foreground="{StaticResource PinselTextGedaempft}"
                                                Margin="0,4,0,0" />
                                 </StackPanel>
                             </StackPanel>
@@ -260,7 +250,7 @@
                                        Margin="0,0,0,4" />
                             <TextBlock Text="Bis zu 5 Spieler pro Team. Leere Plätze werden beim Turnierstart automatisch aufgefüllt."
                                        Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                       Foreground="Gray"
+                                       Foreground="{StaticResource PinselTextGedaempft}"
                                        TextWrapping="Wrap"
                                        Margin="0,0,0,16" />
 
@@ -301,7 +291,7 @@
                                                                      Width="22" Height="22"
                                                                      VerticalAlignment="Center"
                                                                      Margin="0,0,12,0"
-                                                                     Foreground="Gray" />
+                                                                     Foreground="{StaticResource PinselTextGedaempft}" />
                                             <TextBox Grid.Column="1"
                                                      Text="{Binding Name, UpdateSourceTrigger=LostFocus}"
                                                      Style="{StaticResource MaterialDesignOutlinedTextBox}"
@@ -313,7 +303,7 @@
                                                     Style="{StaticResource MaterialDesignIconButton}"
                                                     ToolTip="Spieler entfernen"
                                                     Margin="8,0,0,0">
-                                                <materialDesign:PackIcon Kind="DeleteOutline" Foreground="#C0392B" />
+                                                <materialDesign:PackIcon Kind="DeleteOutline" Foreground="{StaticResource PinselGefahr}" />
                                             </Button>
                                         </Grid>
                                     </DataTemplate>

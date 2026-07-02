@@ -1,0 +1,24 @@
+<UserControl x:Class="KirchenbirkigerSchluck.App.Views.Gemeinsam.TeamAnzeige"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Wurzel">
+    <!--
+        Datei:   TeamAnzeige.xaml
+        Zweck:   Wiederverwendbare Logo-über-Name-Einheit für die
+                 Anzeige-Views (Matchday, Infoscreen, Gewinner)
+        Bereich: Präsentation – Gemeinsame Controls
+    -->
+    <StackPanel>
+        <!-- Team-Logo (ausgeblendet, wenn kein Pfad gesetzt) -->
+        <Image Source="{Binding LogoPfad, ElementName=Wurzel, Converter={StaticResource PfadZuBitmap}}"
+               Height="{Binding LogoGroesse, ElementName=Wurzel}"
+               Stretch="Uniform"
+               Margin="0,0,0,12"
+               Visibility="{Binding LogoPfad, ElementName=Wurzel, Converter={StaticResource PfadZuVisibility}}" />
+
+        <!-- Teamname -->
+        <TextBlock Text="{Binding TeamName, ElementName=Wurzel}"
+                   Style="{StaticResource TeamNameAnzeigeStyle}"
+                   FontSize="{Binding NameGroesse, ElementName=Wurzel}" />
+    </StackPanel>
+</UserControl>

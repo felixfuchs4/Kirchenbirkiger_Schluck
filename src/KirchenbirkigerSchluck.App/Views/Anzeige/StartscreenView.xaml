@@ -6,19 +6,13 @@
         Zweck:   Vollbild-Startscreen vor Turnierbeginn (Logo, Turniername, Uhrzeit)
         Bereich: Präsentation – Anzeige-Views
     -->
-    <Grid Background="{StaticResource AnzeigeHintergrund}">
+    <Grid Background="{StaticResource VerlaufAnzeigeHintergrund}">
 
         <!-- Dezenter Lichtschein hinter der Bildmitte -->
         <Ellipse Width="1100" Height="1100"
                  HorizontalAlignment="Center" VerticalAlignment="Center"
-                 Opacity="0.16">
-            <Ellipse.Fill>
-                <RadialGradientBrush>
-                    <GradientStop Color="#FFC84B" Offset="0.0" />
-                    <GradientStop Color="#00FFC84B" Offset="1.0" />
-                </RadialGradientBrush>
-            </Ellipse.Fill>
-        </Ellipse>
+                 Opacity="0.16"
+                 Fill="{StaticResource GoldSchein}" />
 
         <StackPanel VerticalAlignment="Center"
                     HorizontalAlignment="Center"
@@ -55,14 +49,25 @@
 
             <!-- Goldene Trennlinie -->
             <Border Height="3" Width="160"
-                    Background="{StaticResource AnzeigeAkzentVerlauf}"
+                    Background="{StaticResource VerlaufAkzent}"
                     CornerRadius="2"
                     Margin="0,0,0,48"
-                    Effect="{StaticResource GoldGlowSoft}" />
+                    Effect="{StaticResource GlowGoldSanft}" />
 
-            <!-- Uhrzeit -->
+            <!-- Uhrzeit – „atmet" in sehr langsamer Opacity-Schwingung -->
             <TextBlock Text="{Binding AktuelleUhrzeit}"
-                       Style="{StaticResource UhrzeitStyle}" />
+                       Style="{StaticResource UhrzeitStyle}">
+                <TextBlock.Triggers>
+                    <EventTrigger RoutedEvent="Loaded">
+                        <BeginStoryboard>
+                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 From="1.0" To="0.82" Duration="0:0:6" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </TextBlock.Triggers>
+            </TextBlock>
 
             <!-- Begrüßungszeile -->
             <TextBlock Text="Herzlich willkommen"
