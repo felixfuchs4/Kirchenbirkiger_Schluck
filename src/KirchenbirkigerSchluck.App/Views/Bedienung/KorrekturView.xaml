@@ -1,7 +1,8 @@
 <UserControl x:Class="KirchenbirkigerSchluck.App.Views.Bedienung.KorrekturView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:gemeinsam="clr-namespace:KirchenbirkigerSchluck.App.Views.Gemeinsam">
     <!--
         Datei:   KorrekturView.xaml
         Zweck:   Read-only Anzeige des Änderungsprotokolls
@@ -19,22 +20,11 @@
                    Style="{StaticResource MaterialDesignHeadline6TextBlock}" />
 
         <!-- Keine Einträge -->
-        <TextBlock Grid.Row="2"
-                   Text="Keine Korrekturen bisher erfasst."
-                   Foreground="Gray"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center">
-            <TextBlock.Style>
-                <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignBody1TextBlock}">
-                    <Setter Property="Visibility" Value="Collapsed" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding HatEintraege}" Value="False">
-                            <Setter Property="Visibility" Value="Visible" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </TextBlock.Style>
-        </TextBlock>
+        <gemeinsam:LeererZustand Grid.Row="2"
+                                 Symbol="PencilOutline"
+                                 Titel="Keine Korrekturen bisher erfasst"
+                                 Hinweis="Änderungen an gewerteten Spielen werden hier automatisch protokolliert."
+                                 Visibility="{Binding HatEintraege, Converter={StaticResource InverseBoolToVisibility}}" />
 
         <!-- Eintrags-Liste -->
         <materialDesign:Card Grid.Row="2" Padding="0">

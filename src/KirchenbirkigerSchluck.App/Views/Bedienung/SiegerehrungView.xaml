@@ -15,7 +15,7 @@
                            Margin="0,0,0,8" />
                 <TextBlock Text="Steuert die Ehrung auf dem Anzeigefenster. Reihenfolge: zuerst die fünf treffsichersten Spieler (Platz 5 → 1), danach die Teams (vom schlechtesten zum Sieger)."
                            Style="{StaticResource MaterialDesignBody2TextBlock}"
-                           Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,20" />
+                           Foreground="{StaticResource PinselTextGedaempft}" TextWrapping="Wrap" Margin="0,0,0,20" />
 
                 <ComboBox materialDesign:HintAssist.Hint="Torschützenkönig-Wertung"
                           ItemsSource="{Binding AlleWertungen}"
@@ -34,17 +34,17 @@
                 </Button>
 
                 <!-- Aktueller Schritt -->
-                <materialDesign:Card Padding="20" Background="#F3F0FA" Margin="0,0,0,20">
+                <materialDesign:Card Padding="20" Background="{StaticResource PinselFlaecheDunkel}" Margin="0,0,0,20">
                     <StackPanel>
                         <TextBlock Text="Aktuell angezeigt:"
                                    Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                   Foreground="Gray" />
+                                   Foreground="{StaticResource PinselTextGedaempft}" />
                         <TextBlock Text="{Binding GewinnerVm.VorschauText}"
                                    Style="{StaticResource MaterialDesignHeadline6TextBlock}"
                                    TextWrapping="Wrap" Margin="0,4,0,0" />
                         <TextBlock Text="{Binding GewinnerVm.Fortschritt}"
                                    Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                   Foreground="Gray" Margin="0,6,0,0" />
+                                   Foreground="{StaticResource PinselTextGedaempft}" Margin="0,6,0,0" />
                     </StackPanel>
                 </materialDesign:Card>
 

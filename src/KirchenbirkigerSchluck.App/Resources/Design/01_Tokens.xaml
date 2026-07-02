@@ -1,0 +1,187 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ================================================================
+         Datei:   01_Tokens.xaml
+         Zweck:   Design-Tokens des gesamten Produkts – die EINZIGE
+                  Stelle, an der Hex-Farbwerte definiert werden.
+                  Ebenen: primitive Farben → semantische Pinsel,
+                  dazu Radien, Abstände, Animationsdauern und Easings.
+         Bereich: Präsentation – Designsystem
+         Hinweis: Abstände folgen der 4er-Skala (4/8/12/16/24/32/48/64);
+                  Inline-Margins in Views müssen Vielfache von 4 sein.
+    ================================================================ -->
+
+    <!-- ════════════════════════════════════════════════════════════════
+         PRIMITIVE FARBEN – Markenpalette (Gold / Nacht / Violett)
+    ═════════════════════════════════════════════════════════════════ -->
+
+    <!-- Gold – die Markenfarbe (Akzente, Scores, Sieger) -->
+    <Color x:Key="FarbeGold300">#FFD86B</Color>
+    <Color x:Key="FarbeGold500">#FFC84B</Color>
+    <Color x:Key="FarbeGold700">#FF9A3D</Color>
+
+    <!-- Orange – Zweitakzent für Verläufe und Betonungen -->
+    <Color x:Key="FarbeOrange500">#FF7A45</Color>
+
+    <!-- Violett – Sekundärfarbe der Bedienoberfläche -->
+    <Color x:Key="FarbeViolett300">#B39DDB</Color>
+    <Color x:Key="FarbeViolett500">#7E57C2</Color>
+    <Color x:Key="FarbeViolett700">#5E35B1</Color>
+
+    <!-- Nacht – dunkle Grundflächen (je höher die Zahl, desto dunkler) -->
+    <Color x:Key="FarbeNacht950">#0B0B1A</Color>
+    <Color x:Key="FarbeNacht900">#101120</Color>
+    <Color x:Key="FarbeNacht850">#14152B</Color>
+    <Color x:Key="FarbeNacht800">#1B1B3A</Color>
+    <Color x:Key="FarbeNacht700">#241B45</Color>
+
+    <!-- Flächen – erhabene Ebenen (Karten, Hover, Selektion) -->
+    <Color x:Key="FarbeFlaeche900">#191733</Color>
+    <Color x:Key="FarbeFlaeche800">#1E2038</Color>
+    <Color x:Key="FarbeFlaeche700">#22203F</Color>
+    <Color x:Key="FarbeFlaeche600">#2A2550</Color>
+    <Color x:Key="FarbeFlaeche500">#2E2858</Color>
+
+    <!-- Konturen -->
+    <Color x:Key="FarbeRand">#3A3768</Color>
+    <Color x:Key="FarbeTrennlinie">#34315E</Color>
+
+    <!-- Text – Kontrast auf dunklen Flächen geprüft (gedämpft ≥ 6:1) -->
+    <Color x:Key="FarbeTextHell">#F5F5FA</Color>
+    <Color x:Key="FarbeTextGedaempft">#A6A6C6</Color>
+    <Color x:Key="FarbeTextDunkel">#14152B</Color>
+
+    <!-- Statusfarben – auf dunklem Grund geprüft -->
+    <Color x:Key="FarbeErfolg">#4CAF50</Color>
+    <Color x:Key="FarbeWarnung">#FFA726</Color>
+    <Color x:Key="FarbeGefahr">#EF5350</Color>
+    <Color x:Key="FarbeInfo">#4FC3F7</Color>
+
+    <!-- Live-/Stechen-Rot der Anzeige -->
+    <Color x:Key="FarbeLive">#FF4B4B</Color>
+    <Color x:Key="FarbeStechen">#D43A2F</Color>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         SEMANTISCHE PINSEL – Views verwenden ausschließlich diese
+    ═════════════════════════════════════════════════════════════════ -->
+
+    <!-- Akzente -->
+    <SolidColorBrush x:Key="PinselAkzent" Color="{StaticResource FarbeGold500}" />
+    <SolidColorBrush x:Key="PinselAkzentHell" Color="{StaticResource FarbeGold300}" />
+    <SolidColorBrush x:Key="PinselAkzent2" Color="{StaticResource FarbeOrange500}" />
+    <SolidColorBrush x:Key="PinselSekundaer" Color="{StaticResource FarbeViolett500}" />
+    <SolidColorBrush x:Key="PinselSekundaerHell" Color="{StaticResource FarbeViolett300}" />
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="PinselText" Color="{StaticResource FarbeTextHell}" />
+    <SolidColorBrush x:Key="PinselTextGedaempft" Color="{StaticResource FarbeTextGedaempft}" />
+    <SolidColorBrush x:Key="PinselTextAufAkzent" Color="{StaticResource FarbeTextDunkel}" />
+
+    <!-- Grundflächen -->
+    <SolidColorBrush x:Key="PinselFensterAnzeige" Color="{StaticResource FarbeNacht950}" />
+    <SolidColorBrush x:Key="PinselFensterBedienung" Color="{StaticResource FarbeNacht850}" />
+    <SolidColorBrush x:Key="PinselNavigation" Color="{StaticResource FarbeNacht900}" />
+
+    <!-- Erhabene Flächen und Interaktionszustände -->
+    <SolidColorBrush x:Key="PinselFlaeche" Color="{StaticResource FarbeFlaeche800}" />
+    <SolidColorBrush x:Key="PinselFlaecheDunkel" Color="{StaticResource FarbeFlaeche900}" />
+    <SolidColorBrush x:Key="PinselFlaecheErhaben" Color="{StaticResource FarbeFlaeche700}" />
+    <SolidColorBrush x:Key="PinselFlaecheHover" Color="{StaticResource FarbeFlaeche600}" />
+    <SolidColorBrush x:Key="PinselFlaecheAktiv" Color="{StaticResource FarbeFlaeche500}" />
+
+    <!-- Konturen -->
+    <SolidColorBrush x:Key="PinselRand" Color="{StaticResource FarbeRand}" />
+    <SolidColorBrush x:Key="PinselTrennlinie" Color="{StaticResource FarbeTrennlinie}" />
+
+    <!-- Status -->
+    <SolidColorBrush x:Key="PinselErfolg" Color="{StaticResource FarbeErfolg}" />
+    <SolidColorBrush x:Key="PinselWarnung" Color="{StaticResource FarbeWarnung}" />
+    <SolidColorBrush x:Key="PinselGefahr" Color="{StaticResource FarbeGefahr}" />
+    <SolidColorBrush x:Key="PinselInfo" Color="{StaticResource FarbeInfo}" />
+    <SolidColorBrush x:Key="PinselLive" Color="{StaticResource FarbeLive}" />
+    <SolidColorBrush x:Key="PinselStechen" Color="{StaticResource FarbeStechen}" />
+
+    <!-- ════════════════════════════════════════════════════════════════
+         VERLÄUFE
+    ═════════════════════════════════════════════════════════════════ -->
+
+    <!-- Bühnen-Hintergrund der Anzeige: tiefe Mitternachtsfarben, diagonal -->
+    <LinearGradientBrush x:Key="VerlaufAnzeigeHintergrund" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="{StaticResource FarbeNacht950}" Offset="0.0" />
+        <GradientStop Color="{StaticResource FarbeNacht800}" Offset="0.55" />
+        <GradientStop Color="{StaticResource FarbeNacht700}" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Goldener Akzent-Verlauf (Scores, Sieger, Linien) -->
+    <LinearGradientBrush x:Key="VerlaufAkzent" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="{StaticResource FarbeGold300}" Offset="0.0" />
+        <GradientStop Color="{StaticResource FarbeGold500}" Offset="0.5" />
+        <GradientStop Color="{StaticResource FarbeGold700}" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Dunkler Kopfbereich (Score-Band, Karten-Header) -->
+    <LinearGradientBrush x:Key="VerlaufKopf" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#16142E" Offset="0.0" />
+        <GradientStop Color="#0C0B1C" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Kartenfläche der Anzeige mit leichtem Tiefenverlauf -->
+    <LinearGradientBrush x:Key="VerlaufKarte" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{StaticResource FarbeFlaeche700}" Offset="0.0" />
+        <GradientStop Color="{StaticResource FarbeFlaeche900}" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Violetter Sekundär-Verlauf (Gruppenköpfe, sekundäre Betonungen) -->
+    <LinearGradientBrush x:Key="VerlaufSekundaer" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="{StaticResource FarbeViolett700}" Offset="0.0" />
+        <GradientStop Color="{StaticResource FarbeViolett500}" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         RADIEN – Karten maximal RadiusL, Pille nur für Badges/Chips
+    ═════════════════════════════════════════════════════════════════ -->
+
+    <CornerRadius x:Key="RadiusS">8</CornerRadius>
+    <CornerRadius x:Key="RadiusM">12</CornerRadius>
+    <CornerRadius x:Key="RadiusL">16</CornerRadius>
+    <CornerRadius x:Key="RadiusPille">999</CornerRadius>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         ABSTÄNDE – einheitliche Innenabstände auf 4er-Skala
+    ═════════════════════════════════════════════════════════════════ -->
+
+    <Thickness x:Key="Abstand4">4</Thickness>
+    <Thickness x:Key="Abstand8">8</Thickness>
+    <Thickness x:Key="Abstand12">12</Thickness>
+    <Thickness x:Key="Abstand16">16</Thickness>
+    <Thickness x:Key="Abstand24">24</Thickness>
+    <Thickness x:Key="Abstand32">32</Thickness>
+    <Thickness x:Key="Abstand48">48</Thickness>
+    <Thickness x:Key="Abstand64">64</Thickness>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         MOTION – Dauern und Easings
+         Bedienung: Flink/Standard (Zustands-Feedback)
+         Anzeige:   Ruhig (Folien/Screens), Bühne (Zeremonie)
+    ═════════════════════════════════════════════════════════════════ -->
+
+    <Duration x:Key="DauerFlink">0:0:0.15</Duration>
+    <Duration x:Key="DauerStandard">0:0:0.25</Duration>
+    <Duration x:Key="DauerRuhig">0:0:0.4</Duration>
+    <Duration x:Key="DauerBuehne">0:0:0.7</Duration>
+
+    <!-- Standard-Ausklang für Zustandswechsel -->
+    <CubicEase x:Key="EasingStandard" EasingMode="EaseOut" />
+    <!-- Kräftigerer Ausklang für Bühnen-Momente (Screens, Zeremonie) -->
+    <QuarticEase x:Key="EasingBuehne" EasingMode="EaseOut" />
+
+    <!-- ════════════════════════════════════════════════════════════════
+         SCHRIFTEN – Anzeige nutzt die Display-Variante von Segoe,
+         fällt auf klassisches Segoe UI zurück
+    ═════════════════════════════════════════════════════════════════ -->
+
+    <FontFamily x:Key="SchriftAnzeige">Segoe UI Variable Display, Segoe UI</FontFamily>
+
+</ResourceDictionary>

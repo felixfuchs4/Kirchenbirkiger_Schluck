@@ -1,0 +1,33 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ================================================================
+         Datei:   02_Effekte.xaml
+         Zweck:   Glüh- und Schatteneffekte des Designsystems.
+                  Sparsam einsetzen: DropShadowEffect rendert auf der
+                  CPU – Glows nur auf wenigen, kleinen Elementen.
+         Bereich: Präsentation – Designsystem
+    ================================================================ -->
+
+    <!-- Goldenes Glühen für Scores und Sieger-Hervorhebungen -->
+    <DropShadowEffect x:Key="GlowGold" Color="{StaticResource FarbeGold500}"
+                      BlurRadius="36" ShadowDepth="0" Opacity="0.75" />
+
+    <!-- Dezentes goldenes Glühen für Überschriften -->
+    <DropShadowEffect x:Key="GlowGoldSanft" Color="{StaticResource FarbeGold500}"
+                      BlurRadius="18" ShadowDepth="0" Opacity="0.45" />
+
+    <!-- Rotes Glühen für Live-/Stechen-Momente -->
+    <DropShadowEffect x:Key="GlowRot" Color="{StaticResource FarbeLive}"
+                      BlurRadius="24" ShadowDepth="0" Opacity="0.7" />
+
+    <!-- Tiefenschatten für schwebende Karten der Anzeige -->
+    <DropShadowEffect x:Key="SchattenKarte" Color="#000000"
+                      BlurRadius="24" ShadowDepth="4" Opacity="0.5" Direction="270" />
+
+    <!-- Flacher Schatten für Bedien-Karten (dezenter als die Bühne) -->
+    <DropShadowEffect x:Key="SchattenFlach" Color="#000000"
+                      BlurRadius="12" ShadowDepth="2" Opacity="0.35" Direction="270" />
+
+</ResourceDictionary>

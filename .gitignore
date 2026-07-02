@@ -40,6 +40,10 @@ coverage/
 turnier.json
 backups/
 
+# Veroeffentlichung / Installer-Ausgabe (werden beim Bauen erzeugt)
+publish/
+installer/Output/
+
 # Betriebssystem
 Thumbs.db
 Desktop.ini

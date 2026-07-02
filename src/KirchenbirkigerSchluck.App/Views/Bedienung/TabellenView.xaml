@@ -1,7 +1,8 @@
 <UserControl x:Class="KirchenbirkigerSchluck.App.Views.Bedienung.TabellenView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:gemeinsam="clr-namespace:KirchenbirkigerSchluck.App.Views.Gemeinsam">
     <!--
         Datei:   TabellenView.xaml
         Zweck:   Gruppentabellen-Übersicht im Verwaltungsbildschirm
@@ -9,24 +10,10 @@
     -->
     <Grid Margin="24">
         <!-- Hinweis, wenn keine Tabellen -->
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-            <StackPanel.Style>
-                <Style TargetType="StackPanel">
-                    <Setter Property="Visibility" Value="Collapsed" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding HatTabellen}" Value="False">
-                            <Setter Property="Visibility" Value="Visible" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </StackPanel.Style>
-            <materialDesign:PackIcon Kind="TableLarge" Width="72" Height="72" Foreground="#CCCCCC" HorizontalAlignment="Center" />
-            <TextBlock Text="Noch keine Tabellen"
-                       Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                       Foreground="Gray" HorizontalAlignment="Center" Margin="0,12,0,0" />
-            <TextBlock Text="Tabellen erscheinen, sobald die Gruppen ausgelost und Spiele gewertet sind."
-                       Foreground="Gray" HorizontalAlignment="Center" Margin="0,4,0,0" />
-        </StackPanel>
+        <gemeinsam:LeererZustand Symbol="TableLarge"
+                                 Titel="Noch keine Tabellen"
+                                 Hinweis="Tabellen erscheinen, sobald die Gruppen ausgelost und Spiele gewertet sind."
+                                 Visibility="{Binding HatTabellen, Converter={StaticResource InverseBoolToVisibility}}" />
 
         <!-- Gruppentabellen nebeneinander -->
         <ScrollViewer VerticalScrollBarVisibility="Auto"
@@ -40,13 +27,7 @@
                         <materialDesign:Card Margin="8" Padding="0">
                             <StackPanel>
                                 <!-- Gruppenkopf -->
-                                <Border Padding="16,12">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#5E35B1" Offset="0" />
-                                            <GradientStop Color="#7E57C2" Offset="1" />
-                                        </LinearGradientBrush>
-                                    </Border.Background>
+                                <Border Padding="16,12" Background="{StaticResource VerlaufSekundaer}">
                                     <TextBlock Text="{Binding Name}" Foreground="White" FontSize="18" FontWeight="Bold" />
                                 </Border>
 
@@ -61,12 +42,12 @@
                                         <ColumnDefinition Width="60" />
                                         <ColumnDefinition Width="60" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Pl." FontWeight="SemiBold" Foreground="#5E35B1" />
-                                    <TextBlock Grid.Column="2" Text="Team" FontWeight="SemiBold" Foreground="#5E35B1" />
-                                    <TextBlock Grid.Column="3" Text="Sp." FontWeight="SemiBold" Foreground="#5E35B1" HorizontalAlignment="Center" />
-                                    <TextBlock Grid.Column="4" Text="S." FontWeight="SemiBold" Foreground="#5E35B1" HorizontalAlignment="Center" />
-                                    <TextBlock Grid.Column="5" Text="Duelle" FontWeight="SemiBold" Foreground="#5E35B1" HorizontalAlignment="Center" />
-                                    <TextBlock Grid.Column="6" Text="Pkt." FontWeight="SemiBold" Foreground="#5E35B1" HorizontalAlignment="Center" />
+                                    <TextBlock Grid.Column="0" Text="Pl." FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" />
+                                    <TextBlock Grid.Column="2" Text="Team" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" />
+                                    <TextBlock Grid.Column="3" Text="Sp." FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                                    <TextBlock Grid.Column="4" Text="S." FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                                    <TextBlock Grid.Column="5" Text="Duelle" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                                    <TextBlock Grid.Column="6" Text="Pkt." FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
                                 </Grid>
                                 <Separator Margin="16,0" />
 
@@ -84,20 +65,20 @@
                                                     <ColumnDefinition Width="60" />
                                                     <ColumnDefinition Width="60" />
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="{Binding Platz, StringFormat='{}{0}.'}" FontWeight="Bold" Foreground="#5E35B1" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="0" Text="{Binding Platz, StringFormat='{}{0}.'}" FontWeight="Bold" Foreground="{StaticResource PinselAkzent}" VerticalAlignment="Center" />
                                                 <Image Grid.Column="1" Source="{Binding LogoPfad, Converter={StaticResource PfadZuBitmap}}"
                                                        Width="26" Height="26" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"
                                                        Visibility="{Binding LogoPfad, Converter={StaticResource PfadZuVisibility}}" />
                                                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding TeamName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                                    <Border Background="#D43A2F" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center"
+                                                    <Border Background="{StaticResource PinselStechen}" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center"
                                                             Visibility="{Binding StechenNoetig, Converter={StaticResource BoolToVisibility}}">
                                                         <TextBlock Text="Stechen" Foreground="White" FontSize="10" FontWeight="Bold" />
                                                     </Border>
                                                 </StackPanel>
                                                 <TextBlock Grid.Column="3" Text="{Binding Spiele}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                 <TextBlock Grid.Column="4" Text="{Binding Siege}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                                <TextBlock Grid.Column="5" Text="{Binding DuellDifferenz}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="Gray" />
+                                                <TextBlock Grid.Column="5" Text="{Binding DuellDifferenz}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource PinselTextGedaempft}" />
                                                 <TextBlock Grid.Column="6" Text="{Binding Punkte}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                             </Grid>
                                         </DataTemplate>

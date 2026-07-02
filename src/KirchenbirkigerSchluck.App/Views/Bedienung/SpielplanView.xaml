@@ -15,14 +15,10 @@
         </Grid.RowDefinitions>
 
         <!-- ── Hero: Nächstes Spiel ─────────────────────────────────────── -->
-        <materialDesign:Card Grid.Row="0" Padding="0">
-            <Border CornerRadius="4">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                        <GradientStop Color="#5E35B1" Offset="0" />
-                        <GradientStop Color="#7E57C2" Offset="1" />
-                    </LinearGradientBrush>
-                </Border.Background>
+        <materialDesign:Card Grid.Row="0" Padding="0" UniformCornerRadius="8">
+            <Border BorderBrush="{StaticResource PinselAkzent}"
+                    BorderThickness="0,0,0,2"
+                    CornerRadius="8">
                 <Grid Margin="24,18">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -33,26 +29,24 @@
                     <materialDesign:PackIcon Grid.Column="0"
                                              Kind="PlayCircle"
                                              Width="40" Height="40"
-                                             Foreground="#FFC84B"
+                                             Foreground="{StaticResource PinselAkzent}"
                                              VerticalAlignment="Center"
                                              Margin="0,0,18,0" />
 
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock Text="NÄCHSTES SPIEL"
-                                   Foreground="#D9CCF2"
+                                   Style="{StaticResource BedienHinweisStyle}"
                                    FontSize="11" FontWeight="SemiBold" />
                         <TextBlock Text="{Binding NaechstesSpielText}"
-                                   Foreground="White"
+                                   Foreground="{StaticResource PinselText}"
                                    FontSize="22" FontWeight="Bold"
                                    TextTrimming="CharacterEllipsis" />
                     </StackPanel>
 
+                    <!-- Primäraktion: nutzt die goldene Primärfarbe des Themes -->
                     <Button Grid.Column="2"
                             Content="▶  Spiel starten"
                             Command="{Binding NaechstesSpielStartenCommand}"
-                            Background="#FFC84B"
-                            BorderBrush="#FFC84B"
-                            Foreground="#1A1A2E"
                             Style="{StaticResource MaterialDesignRaisedButton}"
                             Height="52"
                             Padding="24,0"
@@ -63,7 +57,7 @@
         </materialDesign:Card>
 
         <!-- ── Spielliste ───────────────────────────────────────────────── -->
-        <materialDesign:Card Grid.Row="2" Padding="0">
+        <materialDesign:Card Grid.Row="2" Padding="0" UniformCornerRadius="8">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -72,7 +66,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- Spaltenheader -->
-                <Border Grid.Row="0" Background="#EDE7F6" Padding="20,12">
+                <Border Grid.Row="0" Background="{StaticResource PinselFlaecheDunkel}" Padding="20,12">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="56" />
@@ -81,11 +75,11 @@
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="150" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="#" FontWeight="Bold" Foreground="#5E35B1" />
-                        <TextBlock Grid.Column="1" Text="Begegnung" FontWeight="Bold" Foreground="#5E35B1" />
-                        <TextBlock Grid.Column="2" Text="Status" FontWeight="Bold" Foreground="#5E35B1" />
-                        <TextBlock Grid.Column="3" Text="Ergebnis" FontWeight="Bold" Foreground="#5E35B1" HorizontalAlignment="Center" />
-                        <TextBlock Grid.Column="4" Text="Runde" FontWeight="Bold" Foreground="#5E35B1" />
+                        <TextBlock Grid.Column="0" Text="#" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" />
+                        <TextBlock Grid.Column="1" Text="Begegnung" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" />
+                        <TextBlock Grid.Column="2" Text="Status" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" />
+                        <TextBlock Grid.Column="3" Text="Ergebnis" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                        <TextBlock Grid.Column="4" Text="Runde" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" />
                     </Grid>
                 </Border>
 
@@ -98,31 +92,8 @@
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <!-- Zeilen-Karte: Akzentrand für nächstes Spiel, Statusfarbe -->
-                            <Border CornerRadius="6" Margin="8,3" Padding="12,8"
-                                    BorderThickness="0,0,0,0">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Setter Property="Background" Value="Transparent" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IstNaechstes}" Value="True">
-                                                <Setter Property="Background" Value="#FFF8E6" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status}" Value="Läuft">
-                                                <Setter Property="Background" Value="#E8F5E9" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status}" Value="Abgeschlossen">
-                                                <Setter Property="Opacity" Value="0.55" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status}" Value="Korrigiert">
-                                                <Setter Property="Opacity" Value="0.55" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status}" Value="Abgesetzt">
-                                                <Setter Property="Opacity" Value="0.3" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
+                            <!-- Zeilen-Karte: goldene Tönung für nächstes Spiel, Statusfarbe -->
+                            <Border Style="{StaticResource SpielZeileStyle}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="56" />
@@ -137,10 +108,10 @@
                                         <TextBlock Text="{Binding Nummer}"
                                                    VerticalAlignment="Center"
                                                    FontWeight="SemiBold"
-                                                   Foreground="#666" />
+                                                   Foreground="{StaticResource PinselTextGedaempft}" />
                                         <Border Width="4" CornerRadius="2"
                                                 HorizontalAlignment="Left"
-                                                Background="#FFC84B"
+                                                Background="{StaticResource PinselAkzent}"
                                                 Margin="-12,2,0,2"
                                                 Visibility="{Binding IstNaechstes, Converter={StaticResource BoolToVisibility}}" />
                                     </Grid>
@@ -151,8 +122,8 @@
                                                Width="22" Height="22" Stretch="Uniform" Margin="0,0,6,0"
                                                Visibility="{Binding Team1LogoPfad, Converter={StaticResource PfadZuVisibility}}" />
                                         <TextBlock Text="{Binding Team1}" FontWeight="Medium" VerticalAlignment="Center" />
-                                        <Border Background="#EDE7F6" CornerRadius="4" Padding="6,1" Margin="10,0">
-                                            <TextBlock Text="vs" FontSize="11" Foreground="#5E35B1" />
+                                        <Border Background="{StaticResource PinselFlaecheAktiv}" CornerRadius="4" Padding="6,1" Margin="10,0">
+                                            <TextBlock Text="vs" FontSize="11" Foreground="{StaticResource PinselSekundaerHell}" />
                                         </Border>
                                         <Image Source="{Binding Team2LogoPfad, Converter={StaticResource PfadZuBitmap}}"
                                                Width="22" Height="22" Stretch="Uniform" Margin="0,0,6,0"
@@ -161,30 +132,12 @@
                                     </StackPanel>
 
                                     <!-- Status-Pille -->
-                                    <Border Grid.Column="2" CornerRadius="10" Padding="10,3"
-                                            HorizontalAlignment="Left" VerticalAlignment="Center">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Background" Value="#E0E0E0" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Status}" Value="Läuft">
-                                                        <Setter Property="Background" Value="#43A047" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Status}" Value="Abgeschlossen">
-                                                        <Setter Property="Background" Value="#90A4AE" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Status}" Value="Verschoben">
-                                                        <Setter Property="Background" Value="#FB8C00" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Status}" Value="Abgesetzt">
-                                                        <Setter Property="Background" Value="#E53935" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
+                                    <Border Grid.Column="2"
+                                            Style="{StaticResource StatusPillStyle}"
+                                            Padding="10,3"
+                                            HorizontalAlignment="Left">
                                         <TextBlock Text="{Binding Status}"
-                                                   FontSize="12" FontWeight="SemiBold"
-                                                   Foreground="White" />
+                                                   Style="{StaticResource StatusPillTextStyle}" />
                                     </Border>
 
                                     <!-- Ergebnis -->
@@ -195,7 +148,7 @@
 
                                     <!-- Runde -->
                                     <TextBlock Grid.Column="4" Text="{Binding Runde}"
-                                               Foreground="Gray"
+                                               Foreground="{StaticResource PinselTextGedaempft}"
                                                VerticalAlignment="Center"
                                                Style="{StaticResource MaterialDesignCaptionTextBlock}" />
                                 </Grid>
@@ -206,13 +159,13 @@
 
                 <!-- Aktionsleiste für das ausgewählte Spiel -->
                 <Border Grid.Row="2" Padding="16,12"
-                        Background="#F5F5F5"
-                        BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+                        Background="{StaticResource PinselFlaecheDunkel}"
+                        BorderBrush="{StaticResource PinselTrennlinie}" BorderThickness="0,1,0,0">
                     <DockPanel>
                         <!-- Hinweis, wenn nichts ausgewählt -->
                         <TextBlock DockPanel.Dock="Left"
                                    Text="Ein Spiel in der Liste auswählen, um Aktionen anzuzeigen."
-                                   Foreground="Gray" VerticalAlignment="Center"
+                                   Foreground="{StaticResource PinselTextGedaempft}" VerticalAlignment="Center"
                                    Visibility="{Binding HatAuswahl, Converter={StaticResource InverseBoolToVisibility}}" />
 
                         <WrapPanel Visibility="{Binding HatAuswahl, Converter={StaticResource BoolToVisibility}}">
@@ -242,7 +195,7 @@
                             </Button>
                             <Button Command="{Binding SpielNeustartenCommand}"
                                     Style="{StaticResource MaterialDesignOutlinedButton}"
-                                    Foreground="#C0392B" BorderBrush="#C0392B"
+                                    Foreground="{StaticResource PinselGefahr}" BorderBrush="{StaticResource PinselGefahr}"
                                     Margin="0,0,8,0">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Restart" VerticalAlignment="Center" Margin="0,0,8,0" />

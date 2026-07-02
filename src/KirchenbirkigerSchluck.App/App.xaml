@@ -6,13 +6,18 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- MaterialDesign-Theme: Hell / DeepPurple + Amber (passend zum Gold der Anzeige) -->
-                <materialDesign:BundledTheme BaseTheme="Light"
-                                             PrimaryColor="DeepPurple"
-                                             SecondaryColor="Amber" />
+                <!-- MaterialDesign-Theme: Dunkel / Gold als Primär-, Violett als Sekundärfarbe -->
+                <materialDesign:CustomColorTheme BaseTheme="Dark"
+                                                 PrimaryColor="#FFC84B"
+                                                 SecondaryColor="#7E57C2" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign2.Defaults.xaml" />
-                <!-- Eigene Styles (Anzeige-Farben, Versuch-Buttons usw.) -->
-                <ResourceDictionary Source="Resources/Styles.xaml" />
+                <!-- Designsystem: Reihenfolge ist bindend (Tokens vor Konsumenten) -->
+                <ResourceDictionary Source="Resources/Design/00_Konverter.xaml" />
+                <ResourceDictionary Source="Resources/Design/01_Tokens.xaml" />
+                <ResourceDictionary Source="Resources/Design/02_Effekte.xaml" />
+                <ResourceDictionary Source="Resources/Design/03_Typografie.xaml" />
+                <ResourceDictionary Source="Resources/Design/04_Bedienung.xaml" />
+                <ResourceDictionary Source="Resources/Design/05_Anzeige.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

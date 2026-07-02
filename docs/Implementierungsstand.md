@@ -1,10 +1,34 @@
 # Implementierungsstand – Kirchenbirkiger Schluck
 
-> **Stand:** 2026-07-02 | Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 56/56 grün | Siegerehrung: Team-Punkte entfernt, geteilte Plätze gemeinsam auf einer Folie
+> **Stand:** 2026-07-02 | Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 56/56 grün | UI-Redesign: einheitliches Token-Designsystem, dunkles Bedien-Theme, Broadcast-Look der Anzeige
 
 ---
 
 ## Abgeschlossene Schritte ✅
+
+### Schritt AA – Auslieferung: Installer & feste Datenablage ✅ *(abgeschlossen, 2026-07-02)*
+
+| Bereich | Änderung |
+|---|---|
+| **Feste Datenablage** | `App.xaml.cs` setzt beim Start das Arbeitsverzeichnis auf `%LOCALAPPDATA%\KirchenbirkigerSchluck`. Dadurch landen `turnier.json`, `backups/` und `logos/` unabhängig vom Startort immer im selben Ordner. Keine Änderung an LogoService/Convertern/Repository nötig (relative Pfade bleiben portabel) |
+| **App-Icon** | `Resources/Assets/AppIcon.ico` (Multi-Resolution, aus dem Logo generiert); als `<ApplicationIcon>` in der csproj eingebunden (Explorer/Taskleiste/Fenster). Produktversion `<Version>1.0.0</Version>` |
+| **Veröffentlichung** | PublishProfile `Properties/PublishProfiles/win-x64.pubxml` (self-contained, win-x64, Ordner-Publish) |
+| **Installer** | Inno-Setup-Skript `installer/KirchenbirkigerSchluck.iss`: per-user Installation (ohne Admin) nach `%LOCALAPPDATA%\Programs\KirchenbirkigerSchluck`, Desktop-/Startmenü-Verknüpfung, Uninstaller (Datenordner bleibt erhalten) |
+| **Build-Skript** | `veroeffentlichen.ps1` (Root): `dotnet publish` + ISCC in einem Schritt; weist auf `winget install JRSoftware.InnoSetup` hin, falls Inno Setup fehlt |
+| **Doku** | `docs/06_Betrieb/EXE_erstellen.md` (Build- und Auslieferungsanleitung); `.gitignore` um `publish/` + `installer/Output/` ergänzt |
+
+### Schritt Z – UI/UX-Redesign: Token-Designsystem & dunkles Theme ✅ *(abgeschlossen, 2026-07-02)*
+
+| Bereich | Änderung |
+|---|---|
+| **Designsystem** | Neues Token-System unter `Resources/Design/` (`00_Konverter`, `01_Tokens`, `02_Effekte`, `03_Typografie`, `04_Bedienung`, `05_Anzeige`): primitive Farben → semantische Pinsel, Abstands-Skala (4er-Raster), Radien, Motion-Dauern/Easings. Hex-Werte nur noch in `01_Tokens.xaml` (Ausnahme: Bühnenbild der Auslosung). `Resources/Styles.xaml` aufgelöst |
+| **Bedienoberfläche** | Umstellung auf dunkles Theme (`CustomColorTheme BaseTheme=Dark`, Primär Gold `#FFC84B`, Sekundär Violett `#7E57C2`) mit Marken-Nachttönen statt Material-Grau. Nav-Rail mit animiertem Selektions-Indikator (150 ms). Gemeinsame Styles: Status-Pillen, Spielplan-Zeilen, Hinweis-Flächen |
+| **Anzeigeoberfläche** | Broadcast-Look: weiche Screen-Übergänge (`ScreenUebergangVerhalten`, 400 ms Crossfade+Slide), Infoscreen-Folienwechsel animiert, Score-Pop bei Wertänderung (`WertPulsVerhalten`), Stechen mit rotem Score-Glow, Siegerehrung mit 700-ms-Bühneneinblendung, atmende Uhr am Startscreen. Gedämpfter Text `#9090B0 → #A6A6C6`, Beamer-Minimum 22 px. `AutoScrollVerhalten` an der Spielplan-Folie verdrahtet (vorher gestauchtes UniformGrid) |
+| **Wiederverwendbare Controls** | `Views/Gemeinsam/`: `TeamAnzeige` (Logo+Name, ersetzt 6 duplizierte Blöcke), `LiveIndikator`, `LeererZustand` (erklärende Leerzustände in Spielsteuerung/Teams/Gruppen/Tabellen/Korrektur) |
+| **Unverändert** | Alle ViewModels, Bindings, DataTemplate-Zuordnungen und die Auslosungs-Choreografie (`AuslosungView.xaml.cs`) – reine XAML-/Ressourcen-Änderungen |
+| **Doku** | `docs/03_UI_UX/Designrichtlinie.md` als kanonische Designrichtlinie gefüllt (Tokens, Typo-Rampen, Motion-Regeln, Kontrast) |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 56/56 grün
 
 ### Schritt Y – Siegerehrung: geteilte Plätze & Punkte ✅ *(abgeschlossen, 2026-07-02)*
 

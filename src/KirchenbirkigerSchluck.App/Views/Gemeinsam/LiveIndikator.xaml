@@ -1,0 +1,18 @@
+<UserControl x:Class="KirchenbirkigerSchluck.App.Views.Gemeinsam.LiveIndikator"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Datei:   LiveIndikator.xaml
+        Zweck:   Pulsierender LIVE-Indikator (roter Punkt + Schriftzug)
+                 für laufende Spiele auf der Anzeige
+        Bereich: Präsentation – Gemeinsame Controls
+    -->
+    <StackPanel Orientation="Horizontal">
+        <Ellipse Style="{StaticResource LivePunktStyle}" VerticalAlignment="Center" />
+        <TextBlock Text="LIVE"
+                   Foreground="{StaticResource PinselLive}"
+                   FontSize="18" FontWeight="Bold"
+                   VerticalAlignment="Center"
+                   Margin="8,0,0,0" />
+    </StackPanel>
+</UserControl>
