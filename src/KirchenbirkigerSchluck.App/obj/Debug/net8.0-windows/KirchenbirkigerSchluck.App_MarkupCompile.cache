@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
 D:\Documents\Projekte\Kirchenbirkiger_Schluck\src\KirchenbirkigerSchluck.App\App.xaml
-2-72754067
+17-498735339
 221921455482
-51755155881
+44-1086523451
 206137731246
-Windows\AnzeigeWindow.xaml;Windows\BedienWindow.xaml;
+Resources\Styles.xaml;Views\Anzeige\AuslosungView.xaml;Views\Anzeige\GewinnerView.xaml;Views\Anzeige\InfoscreenView.xaml;Views\Anzeige\MatchdayView.xaml;Views\Anzeige\StartscreenView.xaml;Views\Bedienung\EinstellungenView.xaml;Views\Bedienung\GruppenAuslosungView.xaml;Views\Bedienung\KorrekturView.xaml;Views\Bedienung\SiegerehrungView.xaml;Views\Bedienung\SpielplanView.xaml;Views\Bedienung\SpielsteuerungView.xaml;Views\Bedienung\TabellenView.xaml;Views\Bedienung\TeamverwaltungView.xaml;Views\Bedienung\TurnierVerwaltungView.xaml;Windows\AnzeigeWindow.xaml;Windows\BedienWindow.xaml;
 
 False
 

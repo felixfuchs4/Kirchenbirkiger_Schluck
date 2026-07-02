@@ -20,12 +20,6 @@ public enum FinalrundenModus
     KoBaumEin,
 
     /// <summary>
-    /// Zwei getrennte Brackets: obere Hälfte (Gruppe A primär) und
-    /// untere Hälfte (Gruppe B primär) ermitteln ihre Sieger separat.
-    /// </summary>
-    KoBaumZwei,
-
-    /// <summary>
     /// Kurze Finalrunde: Gleichplatzierte aus beiden Gruppen treten
     /// direkt gegeneinander an (A1 vs. B1, A2 vs. B2 usw.).
     /// </summary>

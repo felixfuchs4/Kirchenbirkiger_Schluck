@@ -7,21 +7,23 @@
  *************************************************************/
 
 using System.Windows;
+using KirchenbirkigerSchluck.App.ViewModels;
 
 namespace KirchenbirkigerSchluck.App.Windows;
 
 /// <summary>
 /// Vollbild-Fenster für die Beamer-/Zuschaueransicht.
-/// Wird auf dem zweiten Bildschirm geöffnet und zeigt Spielstand,
-/// Gruppenrangliste, Bracket und Siegeranzeige.
+/// Das DataContext wird per DI-Konstruktorinjektion gesetzt.
 /// </summary>
 public partial class AnzeigeWindow : Window
 {
     /// <summary>
-    /// Initialisiert das Anzeige-Fenster.
+    /// Initialisiert das Anzeige-Fenster mit dem ViewModel aus dem DI-Container.
     /// </summary>
-    public AnzeigeWindow()
+    /// <param name="viewModel">Das Shell-ViewModel der Anzeigeoberfläche.</param>
+    public AnzeigeWindow(AnzeigeWindowViewModel viewModel)
     {
         InitializeComponent();
+        DataContext = viewModel;
     }
 }

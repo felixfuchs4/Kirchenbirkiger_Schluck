@@ -35,6 +35,12 @@ public class Team
     /// <summary>Aktueller Teilnahmestatus der Mannschaft.</summary>
     public TeamStatus Status { get; set; } = TeamStatus.Aktiv;
 
+    /// <summary>
+    /// Optionaler relativer Pfad zur Logo-Bilddatei (z. B. „logos/&lt;id&gt;.png").
+    /// Null, wenn kein Logo hinterlegt ist.
+    /// </summary>
+    public string? LogoPfad { get; set; }
+
     /// <summary>Liste der Spieler in dieser Mannschaft.</summary>
     public List<Spieler> Spieler { get; set; } = [];
 }

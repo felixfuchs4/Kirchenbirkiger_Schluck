@@ -1,0 +1,265 @@
+<UserControl x:Class="KirchenbirkigerSchluck.App.Views.Bedienung.SpielplanView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <!--
+        Datei:   SpielplanView.xaml
+        Zweck:   Spielplan-Übersicht mit Start- und Verschiebe-Funktion
+        Bereich: Präsentation – Bedienungs-Views
+    -->
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="16" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- ── Hero: Nächstes Spiel ─────────────────────────────────────── -->
+        <materialDesign:Card Grid.Row="0" Padding="0">
+            <Border CornerRadius="4">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="#5E35B1" Offset="0" />
+                        <GradientStop Color="#7E57C2" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid Margin="24,18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <materialDesign:PackIcon Grid.Column="0"
+                                             Kind="PlayCircle"
+                                             Width="40" Height="40"
+                                             Foreground="#FFC84B"
+                                             VerticalAlignment="Center"
+                                             Margin="0,0,18,0" />
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="NÄCHSTES SPIEL"
+                                   Foreground="#D9CCF2"
+                                   FontSize="11" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding NaechstesSpielText}"
+                                   Foreground="White"
+                                   FontSize="22" FontWeight="Bold"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+
+                    <Button Grid.Column="2"
+                            Content="▶  Spiel starten"
+                            Command="{Binding NaechstesSpielStartenCommand}"
+                            Background="#FFC84B"
+                            BorderBrush="#FFC84B"
+                            Foreground="#1A1A2E"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Height="52"
+                            Padding="24,0"
+                            FontSize="16"
+                            FontWeight="Bold" />
+                </Grid>
+            </Border>
+        </materialDesign:Card>
+
+        <!-- ── Spielliste ───────────────────────────────────────────────── -->
+        <materialDesign:Card Grid.Row="2" Padding="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Spaltenheader -->
+                <Border Grid.Row="0" Background="#EDE7F6" Padding="20,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="56" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="130" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="150" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="#" FontWeight="Bold" Foreground="#5E35B1" />
+                        <TextBlock Grid.Column="1" Text="Begegnung" FontWeight="Bold" Foreground="#5E35B1" />
+                        <TextBlock Grid.Column="2" Text="Status" FontWeight="Bold" Foreground="#5E35B1" />
+                        <TextBlock Grid.Column="3" Text="Ergebnis" FontWeight="Bold" Foreground="#5E35B1" HorizontalAlignment="Center" />
+                        <TextBlock Grid.Column="4" Text="Runde" FontWeight="Bold" Foreground="#5E35B1" />
+                    </Grid>
+                </Border>
+
+                <!-- Spielzeilen -->
+                <ListView Grid.Row="1"
+                          ItemsSource="{Binding Spiele}"
+                          SelectedItem="{Binding AusgewaehltesSpiel}"
+                          Style="{StaticResource MaterialDesignListView}"
+                          HorizontalContentAlignment="Stretch"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <!-- Zeilen-Karte: Akzentrand für nächstes Spiel, Statusfarbe -->
+                            <Border CornerRadius="6" Margin="8,3" Padding="12,8"
+                                    BorderThickness="0,0,0,0">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IstNaechstes}" Value="True">
+                                                <Setter Property="Background" Value="#FFF8E6" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status}" Value="Läuft">
+                                                <Setter Property="Background" Value="#E8F5E9" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status}" Value="Abgeschlossen">
+                                                <Setter Property="Opacity" Value="0.55" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status}" Value="Korrigiert">
+                                                <Setter Property="Opacity" Value="0.55" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status}" Value="Abgesetzt">
+                                                <Setter Property="Opacity" Value="0.3" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="56" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="130" />
+                                        <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="150" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Spielnummer + Akzent-Marker fürs nächste Spiel -->
+                                    <Grid Grid.Column="0">
+                                        <TextBlock Text="{Binding Nummer}"
+                                                   VerticalAlignment="Center"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#666" />
+                                        <Border Width="4" CornerRadius="2"
+                                                HorizontalAlignment="Left"
+                                                Background="#FFC84B"
+                                                Margin="-12,2,0,2"
+                                                Visibility="{Binding IstNaechstes, Converter={StaticResource BoolToVisibility}}" />
+                                    </Grid>
+
+                                    <!-- Begegnung: Team 1 vs Team 2 -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Image Source="{Binding Team1LogoPfad, Converter={StaticResource PfadZuBitmap}}"
+                                               Width="22" Height="22" Stretch="Uniform" Margin="0,0,6,0"
+                                               Visibility="{Binding Team1LogoPfad, Converter={StaticResource PfadZuVisibility}}" />
+                                        <TextBlock Text="{Binding Team1}" FontWeight="Medium" VerticalAlignment="Center" />
+                                        <Border Background="#EDE7F6" CornerRadius="4" Padding="6,1" Margin="10,0">
+                                            <TextBlock Text="vs" FontSize="11" Foreground="#5E35B1" />
+                                        </Border>
+                                        <Image Source="{Binding Team2LogoPfad, Converter={StaticResource PfadZuBitmap}}"
+                                               Width="22" Height="22" Stretch="Uniform" Margin="0,0,6,0"
+                                               Visibility="{Binding Team2LogoPfad, Converter={StaticResource PfadZuVisibility}}" />
+                                        <TextBlock Text="{Binding Team2}" FontWeight="Medium" VerticalAlignment="Center" />
+                                    </StackPanel>
+
+                                    <!-- Status-Pille -->
+                                    <Border Grid.Column="2" CornerRadius="10" Padding="10,3"
+                                            HorizontalAlignment="Left" VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#E0E0E0" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Läuft">
+                                                        <Setter Property="Background" Value="#43A047" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Abgeschlossen">
+                                                        <Setter Property="Background" Value="#90A4AE" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Verschoben">
+                                                        <Setter Property="Background" Value="#FB8C00" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Abgesetzt">
+                                                        <Setter Property="Background" Value="#E53935" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding Status}"
+                                                   FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="White" />
+                                    </Border>
+
+                                    <!-- Ergebnis -->
+                                    <TextBlock Grid.Column="3" Text="{Binding Ergebnis}"
+                                               FontWeight="Bold" FontSize="15"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+
+                                    <!-- Runde -->
+                                    <TextBlock Grid.Column="4" Text="{Binding Runde}"
+                                               Foreground="Gray"
+                                               VerticalAlignment="Center"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+                <!-- Aktionsleiste für das ausgewählte Spiel -->
+                <Border Grid.Row="2" Padding="16,12"
+                        Background="#F5F5F5"
+                        BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+                    <DockPanel>
+                        <!-- Hinweis, wenn nichts ausgewählt -->
+                        <TextBlock DockPanel.Dock="Left"
+                                   Text="Ein Spiel in der Liste auswählen, um Aktionen anzuzeigen."
+                                   Foreground="Gray" VerticalAlignment="Center"
+                                   Visibility="{Binding HatAuswahl, Converter={StaticResource InverseBoolToVisibility}}" />
+
+                        <WrapPanel Visibility="{Binding HatAuswahl, Converter={StaticResource BoolToVisibility}}">
+                            <Button Command="{Binding SpielBearbeitenCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Margin="0,0,8,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="PencilOutline" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Text="Bearbeiten" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding SpielHierStartenCommand}"
+                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                    Margin="0,0,8,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="PlayCircleOutline" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Text="Spiel starten" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding MatchscreenAnzeigenCommand}"
+                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                    Margin="0,0,8,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Monitor" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Text="Matchscreen anzeigen" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding SpielNeustartenCommand}"
+                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                    Foreground="#C0392B" BorderBrush="#C0392B"
+                                    Margin="0,0,8,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Restart" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Text="Neustarten" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding SpielNachHintenVerschiebenCommand}"
+                                    Style="{StaticResource MaterialDesignFlatButton}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ArrowDown" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Text="Nach hinten" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+                    </DockPanel>
+                </Border>
+            </Grid>
+        </materialDesign:Card>
+    </Grid>
+</UserControl>

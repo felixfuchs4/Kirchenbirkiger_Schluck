@@ -1,0 +1,76 @@
+<UserControl x:Class="KirchenbirkigerSchluck.App.Views.Anzeige.StartscreenView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Datei:   StartscreenView.xaml
+        Zweck:   Vollbild-Startscreen vor Turnierbeginn (Logo, Turniername, Uhrzeit)
+        Bereich: Präsentation – Anzeige-Views
+    -->
+    <Grid Background="{StaticResource AnzeigeHintergrund}">
+
+        <!-- Dezenter Lichtschein hinter der Bildmitte -->
+        <Ellipse Width="1100" Height="1100"
+                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                 Opacity="0.16">
+            <Ellipse.Fill>
+                <RadialGradientBrush>
+                    <GradientStop Color="#FFC84B" Offset="0.0" />
+                    <GradientStop Color="#00FFC84B" Offset="1.0" />
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+
+        <StackPanel VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Margin="60">
+
+            <!-- Logo -->
+            <Image Source="/Resources/Assets/Logo_Kirchenbirkiger_Schluck.png"
+                   MaxHeight="240" MaxWidth="460"
+                   Stretch="Uniform"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,40">
+                <Image.Effect>
+                    <DropShadowEffect Color="#000000" BlurRadius="40" ShadowDepth="0" Opacity="0.6" />
+                </Image.Effect>
+                <Image.Style>
+                    <Style TargetType="Image">
+                        <Style.Triggers>
+                            <!-- Fallback wenn Logo nicht vorhanden -->
+                            <Trigger Property="Source" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Image.Style>
+            </Image>
+
+            <!-- Turniername -->
+            <TextBlock Text="{Binding TurnierName}"
+                       Style="{StaticResource UeberschriftAnzeigeStyle}"
+                       FontSize="52"
+                       Margin="0,0,0,12"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center" />
+
+            <!-- Goldene Trennlinie -->
+            <Border Height="3" Width="160"
+                    Background="{StaticResource AnzeigeAkzentVerlauf}"
+                    CornerRadius="2"
+                    Margin="0,0,0,48"
+                    Effect="{StaticResource GoldGlowSoft}" />
+
+            <!-- Uhrzeit -->
+            <TextBlock Text="{Binding AktuelleUhrzeit}"
+                       Style="{StaticResource UhrzeitStyle}" />
+
+            <!-- Begrüßungszeile -->
+            <TextBlock Text="Herzlich willkommen"
+                       Style="{StaticResource AnzeigeTextGedaempftStyle}"
+                       FontSize="24"
+                       HorizontalAlignment="Center"
+                       Margin="0,32,0,0" />
+
+        </StackPanel>
+    </Grid>
+</UserControl>

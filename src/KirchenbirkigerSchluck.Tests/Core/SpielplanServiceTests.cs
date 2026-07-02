@@ -164,4 +164,62 @@ public class SpielplanServiceTests
         zielSpiel.Spielnummer.Should().Be(3);
         naechstesSpiel.Spielnummer.Should().Be(2);
     }
+
+    // ──────────────────────────────────────────────────────────
+    // PlatzierungsStechenErzeugen
+    // ──────────────────────────────────────────────────────────
+
+    private static Spiel AbgeschlossenesSpielBauen(Guid t1, Guid t2, Guid sieger) => new()
+    {
+        Team1Id = t1,
+        Team2Id = t2,
+        Status = SpielStatus.Abgeschlossen,
+        Ergebnis = new SpielErgebnis
+        {
+            SiegerId = sieger,
+            DuellpunkteTeam1 = sieger == t1 ? 4 : 1,
+            DuellpunkteTeam2 = sieger == t2 ? 4 : 1,
+            EntschiedenDurch = EntscheidungsArt.RegulaereSpielzeit
+        }
+    };
+
+    /// <summary>
+    /// Bei B/C-Gleichstand (gleiche Punkte, kein direkter Vergleich) wird genau ein
+    /// Platzierungs-Stechen B–C erzeugt.
+    /// </summary>
+    [Fact]
+    public void PlatzierungsStechenErzeugen_BeiGleichstand_ErzeugtGenauEinStechen()
+    {
+        // Arrange
+        var teamA = Guid.NewGuid();
+        var teamB = Guid.NewGuid();
+        var teamC = Guid.NewGuid();
+        var teamD = Guid.NewGuid();
+
+        var gruppe = new Gruppe
+        {
+            TeamIds = [teamA, teamB, teamC, teamD],
+            Spiele =
+            [
+                AbgeschlossenesSpielBauen(teamA, teamC, teamA),
+                AbgeschlossenesSpielBauen(teamB, teamD, teamB),
+                AbgeschlossenesSpielBauen(teamC, teamD, teamC)
+            ]
+        };
+        var turnier = new Turnier { Wertungssystem = Wertungssystem.Einfach };
+        turnier.Gruppen.Add(gruppe);
+
+        // Act
+        var anzahl = _sut.PlatzierungsStechenErzeugen(turnier);
+
+        // Assert
+        anzahl.Should().Be(1);
+        var stechen = gruppe.Spiele.Where(s => s.IstPlatzierungsStechen).ToList();
+        stechen.Should().HaveCount(1);
+        var teilnehmer = new[] { stechen[0].Team1Id, stechen[0].Team2Id };
+        teilnehmer.Should().BeEquivalentTo([teamB, teamC]);
+
+        // Erneuter Aufruf erzeugt kein doppeltes Stechen
+        _sut.PlatzierungsStechenErzeugen(turnier).Should().Be(0);
+    }
 }

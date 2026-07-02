@@ -227,4 +227,50 @@ public class WertungsServiceTests
         // C ist immer noch mit B gleichgestellt → Stechen notwendig
         eintrC.StehenErforderlich.Should().BeTrue();
     }
+
+    /// <summary>
+    /// Wie oben (B und C gleichauf), aber ein gespieltes Platzierungs-Stechen B-&gt;C
+    /// löst den Gleichstand auf: B vor C, kein Stechen mehr nötig.
+    /// Das Stechen-Spiel selbst zählt nicht für die Tabellenpunkte.
+    /// </summary>
+    [Fact]
+    public void GruppenRanglisteBerechnen_StechenGespielt_LoestGleichstandAuf()
+    {
+        // Arrange
+        var teamA = Guid.NewGuid();
+        var teamB = Guid.NewGuid();
+        var teamC = Guid.NewGuid();
+        var teamD = Guid.NewGuid();
+
+        var stechen = AbgeschlossenesSpielBauen(teamB, teamC, teamB, EntscheidungsArt.RegulaereSpielzeit, 4, 1);
+        stechen.IstPlatzierungsStechen = true;
+
+        var gruppe = new Gruppe
+        {
+            TeamIds = [teamA, teamB, teamC, teamD],
+            Spiele =
+            [
+                AbgeschlossenesSpielBauen(teamA, teamC, teamA, EntscheidungsArt.RegulaereSpielzeit, 4, 1),
+                AbgeschlossenesSpielBauen(teamB, teamD, teamB, EntscheidungsArt.RegulaereSpielzeit, 4, 1),
+                AbgeschlossenesSpielBauen(teamC, teamD, teamC, EntscheidungsArt.RegulaereSpielzeit, 4, 1),
+                stechen
+            ]
+        };
+
+        // Act
+        var rangliste = _sut.GruppenRanglisteBerechnen(gruppe, Wertungssystem.Einfach);
+
+        // Assert
+        var eintrB = rangliste.Single(e => e.TeamId == teamB);
+        var eintrC = rangliste.Single(e => e.TeamId == teamC);
+
+        // Stechen-Sieger B steht vor C
+        eintrB.Position.Should().BeLessThan(eintrC.Position);
+        // Gleichstand aufgelöst → kein Stechen mehr nötig
+        eintrB.StehenErforderlich.Should().BeFalse();
+        eintrC.StehenErforderlich.Should().BeFalse();
+        // Stechen zählt nicht für die Tabellenpunkte: B und C weiterhin je 1 Punkt
+        eintrB.Tabellenpunkte.Should().Be(1);
+        eintrC.Tabellenpunkte.Should().Be(1);
+    }
 }

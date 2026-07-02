@@ -2,6 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:vmBedienung="clr-namespace:KirchenbirkigerSchluck.App.ViewModels.Bedienung"
+        xmlns:viewsBedienung="clr-namespace:KirchenbirkigerSchluck.App.Views.Bedienung"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontSize="14"
         Background="{DynamicResource MaterialDesignPaper}"
@@ -10,11 +12,209 @@
         Height="800" Width="1280"
         MinHeight="600" MinWidth="1024"
         WindowStartupLocation="CenterScreen">
-    <!-- Platzhalter: Inhalte folgen mit der UI-Implementierung -->
+    <!--
+        Datei:   BedienWindow.xaml
+        Zweck:   Hauptfenster der Turnierleitung mit Tab-Navigation
+        Bereich: Präsentation – Bedienoberfläche
+    -->
+    <Window.Resources>
+        <!-- DataTemplates: Tab-ViewModel-Typ → UserControl -->
+        <DataTemplate DataType="{x:Type vmBedienung:TurnierVerwaltungViewModel}">
+            <viewsBedienung:TurnierVerwaltungView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vmBedienung:TeamverwaltungViewModel}">
+            <viewsBedienung:TeamverwaltungView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vmBedienung:GruppenAuslosungViewModel}">
+            <viewsBedienung:GruppenAuslosungView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vmBedienung:SpielplanViewModel}">
+            <viewsBedienung:SpielplanView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vmBedienung:TabellenViewModel}">
+            <viewsBedienung:TabellenView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vmBedienung:SpielsteuerungViewModel}">
+            <viewsBedienung:SpielsteuerungView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vmBedienung:KorrekturViewModel}">
+            <viewsBedienung:KorrekturView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vmBedienung:SiegerehrungViewModel}">
+            <viewsBedienung:SiegerehrungView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vmBedienung:EinstellungenViewModel}">
+            <viewsBedienung:EinstellungenView />
+        </DataTemplate>
+    </Window.Resources>
+
     <Grid>
-        <TextBlock Text="Kirchenbirkiger Schluck – Bedienoberfläche"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   Style="{StaticResource MaterialDesignHeadline4TextBlock}" />
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- ── Linke Navigationsleiste ────────────────────────────────── -->
+        <Border Grid.Column="0" Background="#1E1A38">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <!-- Marken-Header -->
+                    <RowDefinition Height="*" />
+                    <!-- Navigationspunkte -->
+                </Grid.RowDefinitions>
+
+                <!-- Marken-Header -->
+                <Border Grid.Row="0" Padding="24,28,24,24">
+                    <StackPanel>
+                        <Border Width="44" Height="4"
+                                Background="#FFC84B"
+                                CornerRadius="2"
+                                HorizontalAlignment="Left"
+                                Margin="0,0,0,16" />
+                        <TextBlock Text="Kirchenbirkiger"
+                                   Foreground="#F5F5FA"
+                                   FontSize="20" FontWeight="Bold" />
+                        <TextBlock Text="Schluck"
+                                   Foreground="#FFC84B"
+                                   FontSize="20" FontWeight="Bold" />
+                        <TextBlock Text="TURNIERLEITUNG"
+                                   Foreground="#7A77A0"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Navigationspunkte -->
+                <TabControl Grid.Row="1"
+                            TabStripPlacement="Left"
+                            SelectedIndex="{Binding AusgewaehlterTabIndex}"
+                            BorderThickness="0"
+                            Background="Transparent">
+                    <TabControl.Resources>
+                        <Style TargetType="TabPanel">
+                            <Setter Property="Margin" Value="0" />
+                        </Style>
+                    </TabControl.Resources>
+                    <TabControl.ItemContainerStyle>
+                        <Style TargetType="TabItem">
+                            <Setter Property="Height" Value="56" />
+                            <Setter Property="Width" Value="220" />
+                            <Setter Property="Foreground" Value="#B0AECC" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="TabItem">
+                                        <Border x:Name="Wurzel"
+                                                Background="Transparent"
+                                                BorderBrush="Transparent"
+                                                BorderThickness="4,0,0,0">
+                                            <ContentPresenter ContentSource="Header"
+                                                              VerticalAlignment="Center"
+                                                              Margin="20,0" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Wurzel" Property="Background" Value="#2A2550" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="Wurzel" Property="Background" Value="#2E2858" />
+                                                <Setter TargetName="Wurzel" Property="BorderBrush" Value="#FFC84B" />
+                                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </TabControl.ItemContainerStyle>
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="TrophyOutline" Width="22" Height="22"
+                                                         VerticalAlignment="Center" Margin="0,0,14,0" />
+                                <TextBlock Text="Turnier" VerticalAlignment="Center" FontSize="15" />
+                            </StackPanel>
+                        </TabItem.Header>
+                    </TabItem>
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="AccountGroup" Width="22" Height="22"
+                                                         VerticalAlignment="Center" Margin="0,0,14,0" />
+                                <TextBlock Text="Teamverwaltung" VerticalAlignment="Center" FontSize="15" />
+                            </StackPanel>
+                        </TabItem.Header>
+                    </TabItem>
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ShuffleVariant" Width="22" Height="22"
+                                                         VerticalAlignment="Center" Margin="0,0,14,0" />
+                                <TextBlock Text="Gruppen" VerticalAlignment="Center" FontSize="15" />
+                            </StackPanel>
+                        </TabItem.Header>
+                    </TabItem>
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FormatListBulleted" Width="22" Height="22"
+                                                         VerticalAlignment="Center" Margin="0,0,14,0" />
+                                <TextBlock Text="Spielplan" VerticalAlignment="Center" FontSize="15" />
+                            </StackPanel>
+                        </TabItem.Header>
+                    </TabItem>
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="TableLarge" Width="22" Height="22"
+                                                         VerticalAlignment="Center" Margin="0,0,14,0" />
+                                <TextBlock Text="Tabellen" VerticalAlignment="Center" FontSize="15" />
+                            </StackPanel>
+                        </TabItem.Header>
+                    </TabItem>
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="PlayCircleOutline" Width="22" Height="22"
+                                                         VerticalAlignment="Center" Margin="0,0,14,0" />
+                                <TextBlock Text="Spiel" VerticalAlignment="Center" FontSize="15" />
+                            </StackPanel>
+                        </TabItem.Header>
+                    </TabItem>
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="PencilOutline" Width="22" Height="22"
+                                                         VerticalAlignment="Center" Margin="0,0,14,0" />
+                                <TextBlock Text="Korrekturen" VerticalAlignment="Center" FontSize="15" />
+                            </StackPanel>
+                        </TabItem.Header>
+                    </TabItem>
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="TrophyVariant" Width="22" Height="22"
+                                                         VerticalAlignment="Center" Margin="0,0,14,0" />
+                                <TextBlock Text="Siegerehrung" VerticalAlignment="Center" FontSize="15" />
+                            </StackPanel>
+                        </TabItem.Header>
+                    </TabItem>
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Cog" Width="22" Height="22"
+                                                         VerticalAlignment="Center" Margin="0,0,14,0" />
+                                <TextBlock Text="Einstellungen" VerticalAlignment="Center" FontSize="15" />
+                            </StackPanel>
+                        </TabItem.Header>
+                    </TabItem>
+                </TabControl>
+            </Grid>
+        </Border>
+
+        <!-- ── Inhaltsbereich (rechts): DataTemplate-Dispatch ─────────── -->
+        <Border Grid.Column="1" Background="#F4F2F9">
+            <ContentControl Content="{Binding AktivesTabViewModel}" />
+        </Border>
     </Grid>
 </Window>

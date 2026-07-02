@@ -1,0 +1,288 @@
+<UserControl x:Class="KirchenbirkigerSchluck.App.Views.Anzeige.AuslosungView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Datei:   AuslosungView.xaml
+        Zweck:   Animierte Gruppenauslosung für das Publikum (Lostrommel, Kugeln, Enthüllung)
+        Bereich: Präsentation – Anzeige-Views
+    -->
+    <UserControl.Resources>
+        <!-- Team-Chip in der Gruppenspalte, poppt beim Erscheinen ein -->
+        <Style x:Key="GruppenTeamChipStyle" TargetType="Border">
+            <Setter Property="Background" Value="#22203F" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Margin" Value="0,4" />
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <EventTrigger RoutedEvent="Loaded">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                             From="0" To="1" Duration="0:0:0.4" />
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                             From="0.3" To="1" Duration="0:0:0.5">
+                                <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.7" /></DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                             From="0.3" To="1" Duration="0:0:0.5">
+                                <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.7" /></DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource AnzeigeHintergrund}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- ── Titelzeile ───────────────────────────────────────────────── -->
+        <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,28,0,0">
+            <TextBlock Text="GRUPPENAUSLOSUNG"
+                       Style="{StaticResource UeberschriftAnzeigeStyle}"
+                       FontSize="44" />
+            <TextBlock Text="{Binding StatusText}"
+                       Style="{StaticResource AnzeigeTextGedaempftStyle}"
+                       FontSize="22"
+                       HorizontalAlignment="Center"
+                       Margin="0,6,0,0" />
+        </StackPanel>
+
+        <!-- ── Bühne: links Trommel/Kugel, rechts Gruppen ───────────────── -->
+        <Grid Grid.Row="1" Margin="40,20,40,40">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="520" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Ziehbereich: Lostrommel unten, Kugel-Enthüllung oben -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Kugel-Stage -->
+                <Grid Grid.Row="0">
+                    <!-- Sanfter Lichtschein hinter der Kugel -->
+                    <Ellipse Width="420" Height="420"
+                             HorizontalAlignment="Center" VerticalAlignment="Center"
+                             Opacity="0.22">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush>
+                                <GradientStop Color="#FFC84B" Offset="0.0" />
+                                <GradientStop Color="#00FFC84B" Offset="1.0" />
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                    </Ellipse>
+
+                    <!-- Die Loskugel -->
+                    <Grid x:Name="BallContainer" Width="200" Height="200"
+                          Opacity="0"
+                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform x:Name="BallS" ScaleX="0.5" ScaleY="0.5" />
+                                <TranslateTransform x:Name="BallT" Y="140" />
+                            </TransformGroup>
+                        </Grid.RenderTransform>
+
+                        <!-- Enthüllungskarte (hinter den Halbschalen) -->
+                        <Border x:Name="EnthuellKarte"
+                                Width="190" Height="190"
+                                CornerRadius="20"
+                                Background="#FFFFFF"
+                                Opacity="0"
+                                RenderTransformOrigin="0.5,0.5"
+                                Effect="{StaticResource GoldGlow}">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="KarteScale" ScaleX="0" ScaleY="0" />
+                            </Border.RenderTransform>
+                            <StackPanel VerticalAlignment="Center" Margin="10">
+                                <!-- Logo des gezogenen Teams -->
+                                <Image Source="{Binding AktuellesLogoPfad, Converter={StaticResource PfadZuBitmap}}"
+                                       Height="92" Stretch="Uniform"
+                                       Margin="0,0,0,6"
+                                       Visibility="{Binding HatAktuellesLogo, Converter={StaticResource BoolToVisibility}}" />
+                                <TextBlock Text="{Binding AktuellerTeamName}"
+                                           Foreground="#1A1A2E"
+                                           FontSize="22" FontWeight="Bold"
+                                           TextAlignment="Center" TextWrapping="Wrap"
+                                           HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Untere Halbschale -->
+                        <Border x:Name="UntereHaelfte"
+                                Width="200" Height="100"
+                                VerticalAlignment="Bottom"
+                                CornerRadius="0,0,100,100"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <TranslateTransform x:Name="UntenT" Y="0" />
+                            </Border.RenderTransform>
+                            <Border.Background>
+                                <RadialGradientBrush GradientOrigin="0.35,0.2" Center="0.5,0.5" RadiusX="0.9" RadiusY="0.9">
+                                    <GradientStop Color="#FFE9A8" Offset="0.0" />
+                                    <GradientStop Color="#FFC84B" Offset="0.5" />
+                                    <GradientStop Color="#C8860B" Offset="1.0" />
+                                </RadialGradientBrush>
+                            </Border.Background>
+                        </Border>
+
+                        <!-- Obere Halbschale -->
+                        <Border x:Name="ObereHaelfte"
+                                Width="200" Height="100"
+                                VerticalAlignment="Top"
+                                CornerRadius="100,100,0,0"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <TranslateTransform x:Name="ObenT" Y="0" />
+                            </Border.RenderTransform>
+                            <Border.Background>
+                                <RadialGradientBrush GradientOrigin="0.35,0.8" Center="0.5,0.5" RadiusX="0.9" RadiusY="0.9">
+                                    <GradientStop Color="#FFF4D6" Offset="0.0" />
+                                    <GradientStop Color="#FFD46B" Offset="0.5" />
+                                    <GradientStop Color="#D89512" Offset="1.0" />
+                                </RadialGradientBrush>
+                            </Border.Background>
+                            <!-- Glanzlicht -->
+                            <Ellipse Width="60" Height="34" Fill="#80FFFFFF"
+                                     HorizontalAlignment="Left" VerticalAlignment="Top"
+                                     Margin="34,22,0,0" />
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <!-- Lostrommel -->
+                <Grid Grid.Row="1" Width="300" Height="300"
+                      HorizontalAlignment="Center" Margin="0,10,0,0">
+                    <!-- Ständer -->
+                    <Rectangle Width="14" Height="60" Fill="#2A2750"
+                               VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                    <Rectangle Width="120" Height="16" RadiusX="6" RadiusY="6" Fill="#2A2750"
+                               VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,-2" />
+
+                    <!-- Glaskugel der Trommel -->
+                    <Ellipse Width="240" Height="240" VerticalAlignment="Top" HorizontalAlignment="Center">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush GradientOrigin="0.35,0.3">
+                                <GradientStop Color="#3A3768" Offset="0.0" />
+                                <GradientStop Color="#1C1A38" Offset="0.85" />
+                                <GradientStop Color="#15132C" Offset="1.0" />
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                    </Ellipse>
+
+                    <!-- Rotierende Kugeln in der Trommel -->
+                    <Canvas Width="240" Height="240" VerticalAlignment="Top" HorizontalAlignment="Center">
+                        <Canvas.RenderTransform>
+                            <RotateTransform x:Name="TrommelRotation" CenterX="120" CenterY="120" />
+                        </Canvas.RenderTransform>
+                        <Canvas.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="TrommelRotation"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         From="0" To="360" Duration="0:0:7"
+                                                         RepeatBehavior="Forever" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Canvas.Triggers>
+                        <Ellipse Canvas.Left="96" Canvas.Top="40" Width="34" Height="34" Fill="#FFC84B" />
+                        <Ellipse Canvas.Left="150" Canvas.Top="84" Width="30" Height="30" Fill="#FF8A4B" />
+                        <Ellipse Canvas.Left="70" Canvas.Top="120" Width="32" Height="32" Fill="#FFD46B" />
+                        <Ellipse Canvas.Left="140" Canvas.Top="150" Width="28" Height="28" Fill="#FFC84B" />
+                        <Ellipse Canvas.Left="104" Canvas.Top="160" Width="30" Height="30" Fill="#E8B84B" />
+                        <Ellipse Canvas.Left="86" Canvas.Top="86" Width="26" Height="26" Fill="#FF9A3D" />
+                    </Canvas>
+
+                    <!-- Glasreflex -->
+                    <Ellipse Width="240" Height="240" VerticalAlignment="Top" HorizontalAlignment="Center"
+                             IsHitTestVisible="False">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush GradientOrigin="0.3,0.25" Center="0.3,0.25" RadiusX="0.5" RadiusY="0.5">
+                                <GradientStop Color="#40FFFFFF" Offset="0.0" />
+                                <GradientStop Color="#00FFFFFF" Offset="1.0" />
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                    </Ellipse>
+                </Grid>
+            </Grid>
+
+            <!-- Gruppenspalten -->
+            <ItemsControl Grid.Column="1" ItemsSource="{Binding Gruppen}" Margin="20,0,0,0">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Rows="1" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource AnzeigeKarteStyle}" Margin="8,0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <!-- Gruppenkopf -->
+                                <Border Grid.Row="0" CornerRadius="20,20,0,0" Padding="16,14">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#5E35B1" Offset="0" />
+                                            <GradientStop Color="#7E57C2" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <TextBlock Text="{Binding Name}"
+                                               Foreground="White"
+                                               FontSize="24" FontWeight="Bold"
+                                               HorizontalAlignment="Center" />
+                                </Border>
+
+                                <!-- Team-Chips -->
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="14,12">
+                                    <ItemsControl ItemsSource="{Binding Teams}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Style="{StaticResource GruppenTeamChipStyle}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Border Width="34" Height="34" CornerRadius="8"
+                                                                Background="#11FFFFFF"
+                                                                Margin="0,0,12,0"
+                                                                VerticalAlignment="Center">
+                                                            <Image Source="{Binding LogoPfad, Converter={StaticResource PfadZuBitmap}}"
+                                                                   Stretch="Uniform" Margin="3" />
+                                                        </Border>
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   Foreground="{StaticResource AnzeigeText}"
+                                                                   FontSize="19" FontWeight="SemiBold"
+                                                                   VerticalAlignment="Center"
+                                                                   TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
+    </Grid>
+</UserControl>

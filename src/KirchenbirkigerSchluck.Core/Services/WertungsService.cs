@@ -51,6 +51,15 @@ public class WertungsService : IWertungsService
         var gewerteteSpiele = gruppe.Spiele
             .Where(s => s.Status == SpielStatus.Abgeschlossen
                      && s.Ergebnis is not null
+                     && s.Team1Id.HasValue && s.Team2Id.HasValue
+                     && !s.IstPlatzierungsStechen)
+            .ToList();
+
+        // Platzierungs-Stechen werden nicht gewertet, sondern lösen nur Gleichstände auf
+        var stechenSpiele = gruppe.Spiele
+            .Where(s => s.IstPlatzierungsStechen
+                     && s.Status == SpielStatus.Abgeschlossen
+                     && s.Ergebnis is not null
                      && s.Team1Id.HasValue && s.Team2Id.HasValue)
             .ToList();
 
@@ -85,8 +94,13 @@ public class WertungsService : IWertungsService
             .OrderByDescending(e => e.Tabellenpunkte)
             .ToList();
 
-        // Tiebreaker: Direkter Vergleich innerhalb jeder Gleichstand-Gruppe
-        GleichstandAufloesen(sortiert, gewerteteSpiele, wertungssystem);
+        // Ein Stechen ist erst sinnvoll, wenn alle regulären Gruppenspiele abgeschlossen sind
+        var regulaereSpiele = gruppe.Spiele.Where(s => !s.IstPlatzierungsStechen).ToList();
+        bool gruppeKomplett = regulaereSpiele.Count > 0
+            && regulaereSpiele.All(s => s.Status is SpielStatus.Abgeschlossen or SpielStatus.Korrigiert);
+
+        // Tiebreaker: Direkter Vergleich, dann Platzierungs-Stechen
+        GleichstandAufloesen(sortiert, gewerteteSpiele, stechenSpiele, wertungssystem, gruppeKomplett);
 
         // Positionen 1-basiert vergeben
         for (int i = 0; i < sortiert.Count; i++)
@@ -102,7 +116,9 @@ public class WertungsService : IWertungsService
     private void GleichstandAufloesen(
         List<GruppenTabellenEintrag> sortiert,
         List<Spiel> gewerteteSpiele,
-        Wertungssystem wertungssystem)
+        List<Spiel> stechenSpiele,
+        Wertungssystem wertungssystem,
+        bool gruppeKomplett)
     {
         var gleichstandGruppen = sortiert
             .GroupBy(e => e.Tabellenpunkte)
@@ -125,6 +141,16 @@ public class WertungsService : IWertungsService
                 subPunkte[spiel.Team2Id!.Value] += pts2;
             }
 
+            // Stechen-Siege nur zwischen den gleichpunktigen Teams zählen
+            var stechenSiege = gleichstandTeams.ToDictionary(id => id, _ => 0);
+            foreach (var spiel in stechenSpiele.Where(s =>
+                s.Team1Id.HasValue && gleichstandTeams.Contains(s.Team1Id.Value) &&
+                s.Team2Id.HasValue && gleichstandTeams.Contains(s.Team2Id.Value)))
+            {
+                if (spiel.Ergebnis!.SiegerId is { } sieger && stechenSiege.ContainsKey(sieger))
+                    stechenSiege[sieger]++;
+            }
+
             // Positionen der Gleichstand-Teams in der Hauptliste merken
             var indices = sortiert
                 .Select((e, i) => (e, i))
@@ -132,19 +158,24 @@ public class WertungsService : IWertungsService
                 .Select(x => x.i)
                 .ToList();
 
-            // Innerhalb der Gruppe nach Sub-Punkten absteigend sortieren
+            // Sortierung: erst Direkter Vergleich, dann Stechen-Siege
             var neuSortiert = indices
                 .Select(i => sortiert[i])
                 .OrderByDescending(e => subPunkte[e.TeamId])
+                .ThenByDescending(e => stechenSiege[e.TeamId])
                 .ToList();
 
-            // Noch immer punktgleiche Teams als Stechen-pflichtig markieren
-            foreach (var subGleichstand in neuSortiert
-                .GroupBy(e => subPunkte[e.TeamId])
-                .Where(g => g.Count() > 1)
-                .SelectMany(g => g))
+            // Teams, die nach beidem noch gleichauf sind, brauchen (noch) ein Stechen –
+            // aber nur, wenn die Gruppenphase vollständig gespielt ist.
+            if (gruppeKomplett)
             {
-                subGleichstand.StehenErforderlich = true;
+                foreach (var rest in neuSortiert
+                    .GroupBy(e => (subPunkte[e.TeamId], stechenSiege[e.TeamId]))
+                    .Where(g => g.Count() > 1)
+                    .SelectMany(g => g))
+                {
+                    rest.StehenErforderlich = true;
+                }
             }
 
             // Neu sortierte Einträge an die ursprünglichen Positionen zurückschreiben

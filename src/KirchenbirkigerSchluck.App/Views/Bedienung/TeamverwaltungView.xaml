@@ -1,0 +1,328 @@
+<UserControl x:Class="KirchenbirkigerSchluck.App.Views.Bedienung.TeamverwaltungView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <!--
+        Datei:   TeamverwaltungView.xaml
+        Zweck:   Dedizierte Team- und Spielerverwaltung (Details ansehen, ändern, hinzufügen)
+        Bereich: Präsentation – Bedienungs-Views
+    -->
+    <Grid Margin="24">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="340" />
+            <ColumnDefinition Width="20" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- ── Linke Spalte: Teamliste + Team anlegen ──────────────────── -->
+        <materialDesign:Card Grid.Column="0" Padding="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Kopf -->
+                <Border Grid.Row="0" Padding="20,16"
+                        Background="{DynamicResource MaterialDesignToolBarBackground}">
+                    <StackPanel>
+                        <TextBlock Text="Teams"
+                                   Style="{StaticResource MaterialDesignHeadline6TextBlock}" />
+                        <TextBlock Text="Team auswählen, um Details und Spieler zu bearbeiten"
+                                   Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                   Foreground="Gray"
+                                   TextWrapping="Wrap"
+                                   Margin="0,4,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Teamliste -->
+                <ListBox Grid.Row="1"
+                         ItemsSource="{Binding Teams}"
+                         SelectedItem="{Binding AusgewaehltesTeam}"
+                         Style="{StaticResource MaterialDesignListBox}"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Margin="4,8">
+                                <!-- Logo (falls vorhanden) bzw. Platzhalter-Icon -->
+                                <Border Width="30" Height="30" CornerRadius="6"
+                                        Background="#EDE7F6" Margin="0,0,12,0"
+                                        VerticalAlignment="Center">
+                                    <Grid>
+                                        <materialDesign:PackIcon Kind="AccountGroup"
+                                                                 Width="18" Height="18"
+                                                                 HorizontalAlignment="Center"
+                                                                 VerticalAlignment="Center"
+                                                                 Foreground="{DynamicResource PrimaryHueMidBrush}">
+                                            <materialDesign:PackIcon.Style>
+                                                <Style TargetType="materialDesign:PackIcon">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding LogoPfad}" Value="{x:Null}">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </materialDesign:PackIcon.Style>
+                                        </materialDesign:PackIcon>
+                                        <Image Source="{Binding LogoPfad, Converter={StaticResource PfadZuBitmap}}"
+                                               Stretch="Uniform" Margin="3" />
+                                    </Grid>
+                                </Border>
+                                <TextBlock Text="{Binding AnzeigeName}"
+                                           VerticalAlignment="Center"
+                                           FontSize="15" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- Team anlegen -->
+                <Border Grid.Row="2" Padding="16"
+                        Background="{DynamicResource MaterialDesignToolBarBackground}">
+                    <StackPanel>
+                        <TextBlock Text="Neues Team"
+                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                   Margin="0,0,0,8" />
+                        <TextBox materialDesign:HintAssist.Hint="Teamname"
+                                 Text="{Binding NeuerTeamName, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                 Margin="0,0,0,8" />
+                        <TextBox materialDesign:HintAssist.Hint="Kürzel (optional)"
+                                 Text="{Binding NeuerKurzname, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                 Margin="0,0,0,12" />
+                        <Button Content="Team hinzufügen"
+                                Command="{Binding TeamHinzufuegenCommand}"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                HorizontalAlignment="Stretch" />
+                        <TextBlock Text="Teams können nur in der Vorbereitungsphase angelegt werden."
+                                   Foreground="Gray"
+                                   TextWrapping="Wrap"
+                                   Margin="0,8,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignCaptionTextBlock}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IstInVorbereitung}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </materialDesign:Card>
+
+        <!-- ── Rechte Spalte: Details + Spieler des ausgewählten Teams ─── -->
+        <Grid Grid.Column="2">
+
+            <!-- Platzhalter, wenn kein Team gewählt -->
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HatAusgewaehltesTeam}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+                <materialDesign:PackIcon Kind="AccountGroupOutline"
+                                         Width="72" Height="72"
+                                         Foreground="#CCCCCC"
+                                         HorizontalAlignment="Center" />
+                <TextBlock Text="Kein Team ausgewählt"
+                           Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                           Foreground="Gray"
+                           HorizontalAlignment="Center"
+                           Margin="0,12,0,0" />
+                <TextBlock Text="Wähle links ein Team aus, um Details und Spieler zu bearbeiten."
+                           Foreground="Gray"
+                           HorizontalAlignment="Center"
+                           Margin="0,4,0,0" />
+            </StackPanel>
+
+            <!-- Detailbereich (nur wenn Team gewählt) -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ScrollViewer.Style>
+                    <Style TargetType="ScrollViewer">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HatAusgewaehltesTeam}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ScrollViewer.Style>
+
+                <StackPanel>
+                    <!-- Teamdetails -->
+                    <materialDesign:Card Padding="20" Margin="0,0,0,20">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,16">
+                                <TextBlock Text="Teamdetails"
+                                           Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                           VerticalAlignment="Center" />
+                                <Button Content="Team entfernen"
+                                        Command="{Binding TeamEntfernenCommand}"
+                                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                                        HorizontalAlignment="Right"
+                                        Foreground="#C0392B"
+                                        BorderBrush="#C0392B" />
+                            </Grid>
+                            <Grid Margin="0,0,0,20">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*" />
+                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0"
+                                         materialDesign:HintAssist.Hint="Teamname"
+                                         Text="{Binding DetailName, UpdateSourceTrigger=LostFocus}"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+                                <TextBox Grid.Column="2"
+                                         materialDesign:HintAssist.Hint="Kürzel"
+                                         Text="{Binding DetailKurzname, UpdateSourceTrigger=LostFocus}"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+                            </Grid>
+
+                            <!-- Logo -->
+                            <TextBlock Text="Logo"
+                                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                       Margin="0,0,0,8" />
+                            <StackPanel Orientation="Horizontal">
+                                <!-- Logo-Vorschau -->
+                                <Border Width="84" Height="84" CornerRadius="10"
+                                        Background="#F3F0FA"
+                                        BorderBrush="#D1C4E9" BorderThickness="1"
+                                        Margin="0,0,16,0">
+                                    <Grid>
+                                        <materialDesign:PackIcon Kind="ImageOutline"
+                                                                 Width="36" Height="36"
+                                                                 Foreground="#B0A8C8"
+                                                                 HorizontalAlignment="Center"
+                                                                 VerticalAlignment="Center">
+                                            <materialDesign:PackIcon.Style>
+                                                <Style TargetType="materialDesign:PackIcon">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HatLogo}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </materialDesign:PackIcon.Style>
+                                        </materialDesign:PackIcon>
+                                        <Image Source="{Binding DetailLogoPfad, Converter={StaticResource PfadZuBitmap}}"
+                                               Stretch="Uniform" Margin="8" />
+                                    </Grid>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <Button Command="{Binding LogoHochladenCommand}"
+                                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                                            HorizontalAlignment="Left"
+                                            Margin="0,0,0,8">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="Upload" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <TextBlock Text="Logo hochladen" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Command="{Binding LogoEntfernenCommand}"
+                                            Style="{StaticResource MaterialDesignFlatButton}"
+                                            Foreground="#C0392B"
+                                            HorizontalAlignment="Left"
+                                            Padding="8,4">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="DeleteOutline" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                            <TextBlock Text="Entfernen" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                    <TextBlock Text="PNG mit transparentem Hintergrund empfohlen."
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                               Foreground="Gray"
+                                               Margin="0,4,0,0" />
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- Spieler -->
+                    <materialDesign:Card Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="Spieler"
+                                       Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                       Margin="0,0,0,4" />
+                            <TextBlock Text="Bis zu 5 Spieler pro Team. Leere Plätze werden beim Turnierstart automatisch aufgefüllt."
+                                       Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                       Foreground="Gray"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,16" />
+
+                            <!-- Spieler hinzufügen -->
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0"
+                                         materialDesign:HintAssist.Hint="Spielername"
+                                         Text="{Binding NeuerSpielerName, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+                                <Button Grid.Column="2"
+                                        Command="{Binding SpielerHinzufuegenCommand}"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Padding="16,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Plus" VerticalAlignment="Center" />
+                                        <TextBlock Text="Hinzufügen" VerticalAlignment="Center" Margin="6,0,0,0" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                            <!-- Spielerliste -->
+                            <ItemsControl ItemsSource="{Binding Spieler}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <materialDesign:PackIcon Grid.Column="0"
+                                                                     Kind="Account"
+                                                                     Width="22" Height="22"
+                                                                     VerticalAlignment="Center"
+                                                                     Margin="0,0,12,0"
+                                                                     Foreground="Gray" />
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding Name, UpdateSourceTrigger=LostFocus}"
+                                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                                     materialDesign:HintAssist.Hint="Spielername" />
+                                            <Button Grid.Column="2"
+                                                    Command="{Binding DataContext.SpielerEntfernenCommand,
+                                                              RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource MaterialDesignIconButton}"
+                                                    ToolTip="Spieler entfernen"
+                                                    Margin="8,0,0,0">
+                                                <materialDesign:PackIcon Kind="DeleteOutline" Foreground="#C0392B" />
+                                            </Button>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </materialDesign:Card>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

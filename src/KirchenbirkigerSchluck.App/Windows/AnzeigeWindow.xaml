@@ -1,21 +1,37 @@
 <Window x:Class="KirchenbirkigerSchluck.App.Windows.AnzeigeWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
-        TextElement.FontSize="16"
-        Background="{DynamicResource MaterialDesignPaper}"
-        FontFamily="{materialDesign:MaterialDesignFont}"
+        xmlns:vmAnzeige="clr-namespace:KirchenbirkigerSchluck.App.ViewModels.Anzeige"
+        xmlns:viewsAnzeige="clr-namespace:KirchenbirkigerSchluck.App.Views.Anzeige"
         Title="Kirchenbirkiger Schluck – Anzeige"
         WindowStyle="None"
         WindowState="Maximized"
-        ResizeMode="NoResize">
-    <!-- Vollbild-Anzeigeoberfläche für Beamer/Zuschauer -->
-    <!-- Platzhalter: Inhalte folgen mit der UI-Implementierung -->
-    <Grid>
-        <TextBlock Text="Kirchenbirkiger Schluck – Anzeigeoberfläche"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   Style="{StaticResource MaterialDesignHeadline3TextBlock}" />
-    </Grid>
+        ResizeMode="NoResize"
+        Background="#0B0B1A">
+    <!--
+        Datei:   AnzeigeWindow.xaml
+        Zweck:   Vollbild-Fenster für Beamer/Zuschaueransicht mit Screen-Umschaltung
+        Bereich: Präsentation – Anzeigeoberfläche
+    -->
+    <Window.Resources>
+        <!-- DataTemplates: Screen-ViewModel-Typ → UserControl -->
+        <DataTemplate DataType="{x:Type vmAnzeige:StartscreenViewModel}">
+            <viewsAnzeige:StartscreenView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vmAnzeige:InfoscreenViewModel}">
+            <viewsAnzeige:InfoscreenView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vmAnzeige:MatchdayViewModel}">
+            <viewsAnzeige:MatchdayView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vmAnzeige:GewinnerViewModel}">
+            <viewsAnzeige:GewinnerView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vmAnzeige:AuslosungAnzeigeViewModel}">
+            <viewsAnzeige:AuslosungView />
+        </DataTemplate>
+    </Window.Resources>
+
+    <!-- ContentControl zeigt automatisch den passenden UserControl für das aktive Screen-ViewModel -->
+    <ContentControl Content="{Binding AktuellerScreenViewModel}" />
 </Window>

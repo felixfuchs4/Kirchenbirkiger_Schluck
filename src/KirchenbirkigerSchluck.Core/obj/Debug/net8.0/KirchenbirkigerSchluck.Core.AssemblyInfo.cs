@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("KirchenbirkigerSchluck.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+da762cabae88a7ee60db6767d7200c4fd35d1944")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+22789a4e56bff76321d120c965695b9c5a4e68e7")]
 [assembly: System.Reflection.AssemblyProductAttribute("KirchenbirkigerSchluck.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("KirchenbirkigerSchluck.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

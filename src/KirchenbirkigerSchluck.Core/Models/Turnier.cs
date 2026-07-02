@@ -44,6 +44,9 @@ public class Turnier
     /// <summary>Spielmodus der Finalrunde.</summary>
     public FinalrundenModus FinalrundenModus { get; set; } = FinalrundenModus.KoBaumEin;
 
+    /// <summary>Wertungsart für den treffsichersten Spieler (Torschützenkönig).</summary>
+    public TorschuetzenWertung TorschuetzenWertung { get; set; } = TorschuetzenWertung.Absolut;
+
     /// <summary>Aktueller Fortschrittsstand des Turniers.</summary>
     public TurnierStatus Status { get; set; } = TurnierStatus.InVorbereitung;
 

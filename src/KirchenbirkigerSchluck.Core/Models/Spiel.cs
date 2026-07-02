@@ -66,6 +66,20 @@ public class Spiel
     /// </summary>
     public string? BracketRunde { get; set; }
 
+    /// <summary>
+    /// Kennzeichnet ein Platzierungs-Stechen innerhalb einer Gruppe (KO-Spiel zur Auflösung
+    /// gleicher Platzierungen). Solche Spiele zählen nicht für die Tabellenpunkte, sondern
+    /// bestimmen nur die Reihenfolge zwischen den punktgleichen Teams.
+    /// </summary>
+    public bool IstPlatzierungsStechen { get; set; }
+
+    /// <summary>
+    /// Wenn <c>true</c>, werden die Teilnehmer dieses Spiels aus den <b>Verlierern</b> der
+    /// Vorgängerspiele gebildet (z. B. „Spiel um Platz 3" aus den Halbfinal-Verlierern),
+    /// statt aus den Siegern.
+    /// </summary>
+    public bool VorgaengerVerlierer { get; set; }
+
     /// <summary>Aktueller Status der Partie.</summary>
     public SpielStatus Status { get; set; } = SpielStatus.Geplant;
 

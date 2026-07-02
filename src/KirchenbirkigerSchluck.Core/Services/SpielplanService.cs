@@ -39,34 +39,44 @@ public class SpielplanService : ISpielplanService
             .DefaultIfEmpty(0)
             .Max() + 1;
 
-        // Alle Round-Robin-Paare pro Gruppe vorberechnen
-        var paareProGruppe = turnier.Gruppen
-            .Select(g => RoundRobinPaare(g))
+        // Round-Robin nach Kreis-Verfahren: je Gruppe Runden, in denen jede
+        // Mannschaft höchstens einmal spielt (kein Team zweimal hintereinander).
+        var rundenProGruppe = turnier.Gruppen
+            .Select(g => RoundRobinRunden(g.TeamIds))
             .ToList();
 
-        // Interleaved nummerieren: Runde 0 aus Gruppe A, Runde 0 aus Gruppe B, …
-        int index = 0;
-        while (paareProGruppe.Any(p => index < p.Count))
+        int maxRunden = rundenProGruppe.Select(r => r.Count).DefaultIfEmpty(0).Max();
+
+        // Reihenfolge: Runde für Runde, je Begegnung abwechselnd Gruppe A, Gruppe B, …
+        for (int runde = 0; runde < maxRunden; runde++)
         {
-            for (int gi = 0; gi < turnier.Gruppen.Count; gi++)
+            int maxBegegnungen = rundenProGruppe
+                .Where(r => runde < r.Count)
+                .Select(r => r[runde].Count)
+                .DefaultIfEmpty(0)
+                .Max();
+
+            for (int slot = 0; slot < maxBegegnungen; slot++)
             {
-                if (index >= paareProGruppe[gi].Count)
-                    continue;
-
-                var (team1Id, team2Id) = paareProGruppe[gi][index];
-                var gruppe = turnier.Gruppen[gi];
-
-                gruppe.Spiele.Add(new Spiel
+                for (int gi = 0; gi < turnier.Gruppen.Count; gi++)
                 {
-                    GruppeId    = gruppe.Id,
-                    Team1Id     = team1Id,
-                    Team2Id     = team2Id,
-                    Spielnummer = spielnummer++,
-                    Status      = SpielStatus.Geplant
-                });
-            }
+                    var runden = rundenProGruppe[gi];
+                    if (runde >= runden.Count || slot >= runden[runde].Count)
+                        continue;
 
-            index++;
+                    var (team1Id, team2Id) = runden[runde][slot];
+                    var gruppe = turnier.Gruppen[gi];
+
+                    gruppe.Spiele.Add(new Spiel
+                    {
+                        GruppeId    = gruppe.Id,
+                        Team1Id     = team1Id,
+                        Team2Id     = team2Id,
+                        Spielnummer = spielnummer++,
+                        Status      = SpielStatus.Geplant
+                    });
+                }
+            }
         }
     }
 
@@ -130,13 +140,21 @@ public class SpielplanService : ISpielplanService
 
         var siegerId = abgeschlossenesSpiel.Ergebnis.SiegerId;
 
+        // Verlierer ermitteln (das Team, das nicht gewonnen hat)
+        Guid? verliererId = abgeschlossenesSpiel.Team1Id == siegerId
+            ? abgeschlossenesSpiel.Team2Id
+            : abgeschlossenesSpiel.Team1Id;
+
         foreach (var spiel in turnier.Finalrundenspiele)
         {
+            // Bei „Spiel um Platz 3" rückt der Verlierer nach, sonst der Sieger
+            var nachrueckend = spiel.VorgaengerVerlierer ? verliererId : siegerId;
+
             if (spiel.VorgaengerSpiel1Id == abgeschlossenesSpiel.Id)
-                spiel.Team1Id = siegerId;
+                spiel.Team1Id = nachrueckend;
 
             if (spiel.VorgaengerSpiel2Id == abgeschlossenesSpiel.Id)
-                spiel.Team2Id = siegerId;
+                spiel.Team2Id = nachrueckend;
         }
     }
 
@@ -150,7 +168,9 @@ public class SpielplanService : ISpielplanService
     private static void GenerierenKurz(Turnier turnier, List<Guid> a, List<Guid> b, ref int nr)
     {
         int anzahl = Math.Min(a.Count, b.Count);
-        for (int i = 0; i < anzahl; i++)
+        // Absteigend erzeugen, damit die niedrigste Platzierung (z. B. „Platz 5/6") zuerst
+        // gespielt wird und das Spiel um Platz 1/2 die höchste Spielnummer erhält (= letztes Spiel).
+        for (int i = anzahl - 1; i >= 0; i--)
         {
             turnier.Finalrundenspiele.Add(new Spiel
             {
@@ -240,12 +260,15 @@ public class SpielplanService : ISpielplanService
         var hfBot = ErstelleSpiel(null, null, vfBL.Id, vfBR.Id, "Halbfinale", nr++);
         turnier.Finalrundenspiele.AddRange([hfTop, hfBot]);
 
-        // Finale – nur für KoBaumEin
-        if (turnier.FinalrundenModus == FinalrundenModus.KoBaumEin)
-        {
-            turnier.Finalrundenspiele.Add(
-                ErstelleSpiel(null, null, hfTop.Id, hfBot.Id, "Finale", nr++));
-        }
+        // Spiel um Platz 3 + Finale.
+        // Das Spiel um Platz 3 wird direkt vor dem Finale gespielt (kleinere Spielnummer).
+        // Spiel um Platz 3: die beiden Halbfinal-Verlierer treten gegeneinander an
+        var platz3 = ErstelleSpiel(null, null, hfTop.Id, hfBot.Id, "Spiel um Platz 3", nr++);
+        platz3.VorgaengerVerlierer = true;
+        turnier.Finalrundenspiele.Add(platz3);
+
+        turnier.Finalrundenspiele.Add(
+            ErstelleSpiel(null, null, hfTop.Id, hfBot.Id, "Finale", nr++));
     }
 
     /// <summary>
@@ -278,15 +301,97 @@ public class SpielplanService : ISpielplanService
     /// </summary>
     /// <param name="gruppe">Die Gruppe, für die Paare gebildet werden sollen.</param>
     /// <returns>Liste der Team-Id-Paare (Team1Id, Team2Id).</returns>
-    private static List<(Guid Team1Id, Guid Team2Id)> RoundRobinPaare(Gruppe gruppe)
+    /// <inheritdoc/>
+    public int PlatzierungsStechenErzeugen(Turnier turnier)
     {
-        var paare = new List<(Guid, Guid)>();
-        var ids = gruppe.TeamIds;
+        var wertung = new WertungsService();
+        int erzeugt = 0;
+        int nr = AlleSpiele(turnier).Select(s => s.Spielnummer).DefaultIfEmpty(0).Max() + 1;
 
-        for (int i = 0; i < ids.Count; i++)
-            for (int j = i + 1; j < ids.Count; j++)
-                paare.Add((ids[i], ids[j]));
+        foreach (var gruppe in turnier.Gruppen)
+        {
+            var rangliste = wertung.GruppenRanglisteBerechnen(gruppe, turnier.Wertungssystem);
 
-        return paare;
+            // Teams, die noch ein Stechen benötigen, nach Punktstand (Tie-Ebene) gruppieren
+            var stechenGruppen = rangliste
+                .Where(e => e.StehenErforderlich)
+                .GroupBy(e => e.Tabellenpunkte)
+                .Where(g => g.Count() > 1);
+
+            foreach (var tieGruppe in stechenGruppen)
+            {
+                var ids = tieGruppe.Select(e => e.TeamId).ToList();
+
+                // Round-Robin unter den gleichplatzierten Teams – fehlende Begegnungen anlegen
+                for (int i = 0; i < ids.Count; i++)
+                {
+                    for (int j = i + 1; j < ids.Count; j++)
+                    {
+                        var a = ids[i];
+                        var b = ids[j];
+
+                        bool existiert = gruppe.Spiele.Any(s => s.IstPlatzierungsStechen
+                            && ((s.Team1Id == a && s.Team2Id == b)
+                             || (s.Team1Id == b && s.Team2Id == a)));
+                        if (existiert) continue;
+
+                        gruppe.Spiele.Add(new Spiel
+                        {
+                            GruppeId               = gruppe.Id,
+                            Team1Id                = a,
+                            Team2Id                = b,
+                            Spielnummer            = nr++,
+                            Status                 = SpielStatus.Geplant,
+                            IstPlatzierungsStechen = true,
+                            BracketRunde           = "Platzierungs-Stechen"
+                        });
+                        erzeugt++;
+                    }
+                }
+            }
+        }
+
+        return erzeugt;
+    }
+
+    private static List<List<(Guid Team1Id, Guid Team2Id)>> RoundRobinRunden(List<Guid> teamIds)
+    {
+        var teams = new List<Guid>(teamIds);
+        if (teams.Count < 2)
+            return [];
+
+        // Bei ungerader Teamzahl ein „Freilos" (Guid.Empty) ergänzen
+        if (teams.Count % 2 == 1)
+            teams.Add(Guid.Empty);
+
+        int n = teams.Count;
+        int rundenAnzahl = n - 1;
+        int haelfte = n / 2;
+
+        var ergebnis = new List<List<(Guid, Guid)>>();
+        var liste = teams.ToList();
+
+        for (int r = 0; r < rundenAnzahl; r++)
+        {
+            var paare = new List<(Guid, Guid)>();
+            for (int i = 0; i < haelfte; i++)
+            {
+                var a = liste[i];
+                var b = liste[n - 1 - i];
+
+                // Freilos-Begegnungen überspringen
+                if (a != Guid.Empty && b != Guid.Empty)
+                    paare.Add((a, b));
+            }
+            ergebnis.Add(paare);
+
+            // Rotation: erstes Element bleibt fix, der Rest dreht im Uhrzeigersinn
+            var letzte = liste[n - 1];
+            for (int i = n - 1; i > 1; i--)
+                liste[i] = liste[i - 1];
+            liste[1] = letzte;
+        }
+
+        return ergebnis;
     }
 }

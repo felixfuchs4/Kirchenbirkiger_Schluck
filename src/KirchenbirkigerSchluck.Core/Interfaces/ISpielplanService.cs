@@ -44,4 +44,13 @@ public interface ISpielplanService
     /// <param name="turnier">Das Turnierobjekt.</param>
     /// <param name="abgeschlossenesSpiel">Das soeben abgeschlossene Finalrundenspiel.</param>
     void BracketFortsetzungAktualisieren(Turnier turnier, Spiel abgeschlossenesSpiel);
+
+    /// <summary>
+    /// Erzeugt Platzierungs-Stechen-Spiele (KO) für alle Gruppen, in denen Teams nach
+    /// Tabellenpunkten und Direktem Vergleich noch gleichauf sind. Bereits vorhandene
+    /// Stechen-Begegnungen werden nicht doppelt angelegt.
+    /// </summary>
+    /// <param name="turnier">Das Turnierobjekt.</param>
+    /// <returns>Anzahl neu erzeugter Stechen-Spiele.</returns>
+    int PlatzierungsStechenErzeugen(Turnier turnier);
 }

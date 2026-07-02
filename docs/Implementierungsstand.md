@@ -1,10 +1,19 @@
 # Implementierungsstand – Kirchenbirkiger Schluck
 
-> **Stand:** 2026-06-12 | Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 51/51 grün
+> **Stand:** 2026-07-02 | Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 56/56 grün | Siegerehrung: Team-Punkte entfernt, geteilte Plätze gemeinsam auf einer Folie
 
 ---
 
 ## Abgeschlossene Schritte ✅
+
+### Schritt Y – Siegerehrung: geteilte Plätze & Punkte ✅ *(abgeschlossen, 2026-07-02)*
+
+| Bereich | Änderung |
+|---|---|
+| **GewinnerViewModel** | Team-Phase der Ehrung wird nach Platz gruppiert (`SiegerehrungSchritt.Teams`): Mannschaften mit geteiltem Platz erscheinen gemeinsam auf **einer** Folie statt nacheinander. Team-Schritte tragen keine Punktangabe mehr (`Detail` leer) |
+| **GewinnerView** | Zwei Layouts je Schritt: Spieler-Layout (einzeln, mit Detail) und Team-Layout (`ItemsControl` + `WrapPanel`, Teams nebeneinander). Platznummer prominent und pro Folie nur einmal oben; keine Team-Punkte |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 56/56 grün
 
 ### Grundstruktur
 
@@ -21,7 +30,7 @@
 |---|---|---|
 | `WertungsService` | `TabellenPunkteBerechnen`, `GruppenRanglisteBerechnen` (inkl. Direkter-Vergleich-Tiebreaker + Stechen-Markierung) | **8** |
 | `SpielsteuerungService` | `SpielStarten`, `NaechesDuellStarten`, `StechenStarten`, `VersuchErfassen`, `SpielAbschliessen` | **8** |
-| `SpielplanService` | `GruppenspielplanGenerieren` (Round-Robin, interleaved), `NaechstesSpielErmitteln`, `SpielNachHintenVerschieben`, `FinalrundeGenerieren` (KoBaumEin/KoBaumZwei/Kurz), `BracketFortsetzungAktualisieren` | **14** |
+| `SpielplanService` | `GruppenspielplanGenerieren` (Round-Robin, interleaved), `NaechstesSpielErmitteln`, `SpielNachHintenVerschieben`, `FinalrundeGenerieren` (KoBaumEin/Kurz), `BracketFortsetzungAktualisieren` | **14** |
 
 ### Services & Klassen – Data
 
@@ -35,7 +44,7 @@
 
 ---
 
-## Offene Schritte 🔲
+## Abgeschlossene Implementierungsschritte
 
 ### Schritt A – Data Layer abschließen ✅ *(abgeschlossen)*
 
@@ -79,15 +88,291 @@ Tests: EintragErstellen (Felder, Begruendung null), EintraegeAbfragen (Filter, S
 
 | Methode | Beschreibung |
 |---|---|
-| `FinalrundeGenerieren()` – Modus `Kurz` | Gleichplatzierte aus beiden Gruppen direkt gegeneinander (A1 vs B1, A2 vs B2, …) |
-| `FinalrundeGenerieren()` – Modus `KoBaumEin` | Cross-geseedeter KO-Baum (Achtelfinale → Viertelfinale → Halbfinale → Finale); alle Spiele sofort generiert, TBD-Slots mit `null`-Team-IDs und `VorgaengerSpielId` |
-| `FinalrundeGenerieren()` – Modus `KoBaumZwei` | Wie `KoBaumEin`, aber zwei separate Brackets ohne gemeinsames Finale |
+| `FinalrundeGenerieren()` – Modus `Kurz` | Gleichplatzierte aus beiden Gruppen direkt gegeneinander (A1 vs B1, A2 vs B2, …); das Spiel um Platz 1/2 wird zuletzt gespielt (höchste Spielnummer) |
+| `FinalrundeGenerieren()` – Modus `KoBaumEin` | Cross-geseedeter KO-Baum (Achtelfinale → Viertelfinale → Halbfinale → Spiel um Platz 3 → Finale); alle Spiele sofort generiert, TBD-Slots mit `null`-Team-IDs und `VorgaengerSpielId` |
 | `BracketFortsetzungAktualisieren()` | Trägt Sieger eines abgeschlossenen Bracket-Spiels automatisch in die Folgerunde ein |
 
 Modeländerungen: `Spiel.Team1Id/Team2Id` → `Guid?` (nullable), `VorgaengerSpiel1Id/2Id`, `BracketRunde` ergänzt.
-`FinalrundenModus`-Enum (`KoBaumEin`, `KoBaumZwei`, `Kurz`) neu angelegt.
+`FinalrundenModus`-Enum (`KoBaumEin`, `Kurz`) neu angelegt. (Der frühere Modus `KoBaumZwei` – zwei separate Brackets ohne gemeinsames Finale – wurde entfernt, da fachlich nicht benötigt.)
 
-Tests: Kurz_ZweiGruppen_ErzeugtKorrektePaarungen, Kurz_AnzahlSpieleEntsprichtKleinstenGruppe, KoBaum_ZweiGruppenJe6_ErzeugtVierAchtelfinaleSpiele, KoBaum_ZweiGruppenJe6_ErzeugtViertelfinaleAlsPlatzhalter, KoBaum_ZweiGruppenJe6_KoBaumEin_ErzeugtFinale, KoBaum_ZweiGruppenJe6_KoBaumZwei_KeinFinale, KoBaum_ZweiGruppenJe5_ErzeugtZweiAchtelfinaleSpiele, BracketFortsetzung_TraegtSiegerInNaechsteRunde
+Tests: Kurz_ZweiGruppen_ErzeugtKorrektePaarungen, Kurz_SpielUmPlatzEins_WirdZuletztGespielt, Kurz_AnzahlSpieleEntsprichtKleinstenGruppe, KoBaum_ZweiGruppenJe6_ErzeugtVierAchtelfinaleSpiele, KoBaum_ZweiGruppenJe6_ErzeugtViertelfinaleAlsPlatzhalter, KoBaum_ZweiGruppenJe6_KoBaumEin_ErzeugtFinale, KoBaum_ZweiGruppenJe5_ErzeugtZweiAchtelfinaleSpiele, BracketFortsetzung_TraegtSiegerInNaechsteRunde
+
+---
+
+### Schritt X – KO-Platzierung, Platz-3 vor Finale, Torschützen-Wertung umstellbar ✅ *(abgeschlossen, 2026-06-13)*
+
+| Bereich | Änderung |
+|---|---|
+| **Siegerehrung nach KO-Baum** | Endplatzierung wird nicht mehr nach Tabellenpunkten, sondern nach dem Abschneiden im Turnierbaum berechnet: Platz 1/2 aus dem Finale, 3/4 aus dem Spiel um Platz 3, danach geteilte Plätze je nach Ausscheide-Runde (Viertelfinal-Verlierer teilen Platz 5, Achtelfinal-Verlierer den nächsten Block usw.). Kurz-Modus über die „Platz X/Y"-Spiele, Fallback nach Gruppenpunkten |
+| **Spiel um Platz 3 vor dem Finale** | Wird jetzt mit kleinerer Spielnummer als das Finale erzeugt → erscheint im Spielplan und Baum direkt vor dem Finale |
+| **Torschützen-Wertung umstellbar** | Im Siegerehrungs-Tab kann die Wertung (Absolut/Prozentual) auch nachträglich geändert werden; bei „Prozentual" zeigt die Ehrung „60% – 6 von 10 Versuchen" |
+| **Finalrunde neu erzeugen** | Button im Turnier-Tab (aktiv in der Finalrunde): baut den Finalrunden-Spielplan inkl. Spiel um Platz 3 aus den aktuellen Gruppentabellen neu auf – nötig für Turniere, deren Finalrunde noch aus einer Version ohne Platz-3-Spiel stammt. Übernimmt den gewählten Finalrunden-Modus |
+| **Bracket: Spiel um Platz 3 unter dem Finale** | Im Infoscreen-Baum wird das Spiel um Platz 3 unterhalb des Finales platziert (eigene Beschriftung „Spiel um Platz 3") und mit **gestrichelter** Linie von den Halbfinals verbunden (Verlierer-Weg), das Finale weiterhin mit durchgezogener Linie (Sieger-Weg) |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 56/56 grün
+
+---
+
+### Schritt W – Bracket-Linien, Folien-Auswahl, Torschützenkönig, Siegerehrung ✅ *(abgeschlossen, 2026-06-13)*
+
+| Bereich | Umsetzung |
+|---|---|
+| **Echte Bracket-Linien** | Finalrunden-Baum als positionierte Knoten auf Canvas (Viewbox-skaliert) mit Elbow-Verbindungslinien je Vorgänger → durchgehende Verbindung sichtbar, wer gegen wen weiterkommt |
+| **Finalphase-Infoscreen** | In Finalrunde/Abgeschlossen zeigt der Infoscreen nur noch Nächste/Letzte Partie + Baum (Tabellen & Spielplan automatisch ausgeblendet) |
+| **Folien manuell wählbar** | Neue `InfoscreenEinstellungen` (Singleton) + Schalter im Einstellungen-Tab für jede Folie |
+| **Torschützenkönig-Wertung** | Neue `Turnier.TorschuetzenWertung` (Absolut/Prozentual), wählbar bei Turniererstellung; `StatistikService` aggregiert Treffer/Versuche je Spieler und rankt entsprechend |
+| **Schrittweise Siegerehrung** | `GewinnerViewModel` als Ehrungs-Abfolge: erst 5 treffsicherste Spieler (Platz 5→1, Detail je nach Wertung „12 Treffer" bzw. „60% – 6 von 10 Versuchen"), dann Teams (schlechtester→Sieger). Jeder Schritt zeigt eine Person/Team groß mit Logo + Detail |
+| **Siegerehrungs-Menü** | Neuer Verwaltungs-Tab „Siegerehrung" mit Start / Weiter / Zurück und Vorschau des aktuellen Schritts |
+| **Tests** | +1 Statistik-Test (Absolut vs. Prozentual) → 56/56 grün |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 56/56 grün
+
+---
+
+### Schritt V – VS-Zentrierung + Spiel um Platz 3 ✅ *(abgeschlossen, 2026-06-13)*
+
+| Bereich | Änderung |
+|---|---|
+| **VS/Ergebnis zentriert** | „Nächste Partie" und „Letzte Partie" nutzen `Grid.IsSharedSizeScope` + `SharedSizeGroup` → beide Teamspalten gleich breit, VS bzw. Ergebnis sitzt immer exakt mittig, unabhängig von der Namenslänge |
+| **Spiel um Platz 3** | Neues `Spiel.VorgaengerVerlierer`-Flag; KoBaumEin erzeugt zusätzlich „Spiel um Platz 3" aus den beiden Halbfinal-Verlierern. `BracketFortsetzungAktualisieren` trägt bei diesem Spiel den Verlierer statt des Siegers ein |
+| **Bracket-Verbinder** | Verbinder-Stummel (goldene Linien) links/rechts an den Bracket-Karten deuten den Weg durch den Baum an |
+| **Tests** | +2 Finalrunden-Tests (Platz-3-Erzeugung + Verlierer-Weiterleitung) → 55/55 grün |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 55/55 grün
+
+---
+
+### Schritt U – Treffer-Spinner + Spielplan-Aktionsleiste ✅ *(abgeschlossen, 2026-06-13)*
+
+| Bereich | Änderung |
+|---|---|
+| **Treffer-Spinner** | Trefferzahl je Spieler nur noch per +/−-Buttons (0–3 begrenzt), keine freie Tastatureingabe mehr; bei Änderung werden Sieger, Duellpunkte und der Live-Spielstand sofort neu berechnet. Tabellenpunkte aktualisieren sich beim erneuten Abschließen des Spiels |
+| **Spielplan-Aktionsleiste** | Beim Auswählen eines Matches erscheinen Buttons: **Bearbeiten** (öffnet das Spiel ausführlich in der Spielsteuerung – Ergebnis, Treffer, Spielerauswahl editierbar), **Spiel starten**, **Matchscreen anzeigen**, **Neustarten** (mit Sicherheitsabfrage), **Nach hinten**. Buttons sind je nach Spielstatus aktiv/inaktiv. Kontextmenü durch sichtbare Aktionsleiste ersetzt |
+| **Mehrfach-Schutz** | „Bearbeiten" verhindert, dass zwei Spiele gleichzeitig laufen |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 53/53 grün
+
+---
+
+### Schritt T – Spiellogik-Korrekturen + Duell-Bearbeitung ✅ *(abgeschlossen, 2026-06-13)*
+
+| Nr | Punkt | Umsetzung |
+|----|-------|-----------|
+| 1 | Stechen-Marker | `StehenErforderlich` wird nur noch gesetzt, wenn alle regulären Gruppenspiele abgeschlossen sind (kein „Stechen" mehr bei 0 Spielen) |
+| 2 | Spielplan-Reihenfolge | Verwaltungs-Spielplan durchgehend nach Spielnummer sortiert (Gruppen abwechselnd); ListView-Items füllen die volle Breite → Spalten (Status/Ergebnis/Runde) korrekt untereinander |
+| 3 | Duell-Ergebnis | Anzeige zeigt jetzt die echte Trefferzahl (z. B. 3:3, 2:1, 0:0) statt „½:½". Punkteregel unverändert korrekt (beide 1 Punkt bei ≥1 Treffer, 0:0 keiner) |
+| 4/5 | Duell-Bearbeitung | Neues editierbares Duell-Modell: Spieler per ComboBox tauschbar, Trefferzahl per Tastatur änderbar; Sieger/Duellpunkte werden aus der Trefferzahl abgeleitet, Versuche rekonstruiert. Ersetzt den fehleranfälligen „Letzten Versuch rückgängig"-Button |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 53/53 grün
+
+---
+
+### Schritt S – Automatisches KO-Stechen (Punkt 8 vervollständigt) ✅ *(abgeschlossen, 2026-06-13)*
+
+| Bereich | Änderung |
+|---|---|
+| **Modell** | `Spiel.IstPlatzierungsStechen` – KO-Spiel zur Auflösung gleicher Gruppenplatzierungen (zählt nicht für Tabellenpunkte) |
+| **WertungsService** | Stechen-Spiele werden aus der Punktewertung ausgenommen und als dritte Tiebreaker-Stufe (nach Direktem Vergleich) zur Reihenfolge genutzt; `StehenErforderlich` nur noch wenn auch nach Stechen gleichauf |
+| **SpielplanService** | `PlatzierungsStechenErzeugen(turnier)` legt für gleichplatzierte Teams Round-Robin-Stechenspiele an (ohne Duplikate) |
+| **Auto-Abschluss** | Bei offenem Gleichstand erzeugt die Spielsteuerung automatisch die Stechen-Spiele (statt zu blockieren); nach deren Austragung wird die Finalrunde automatisch erstellt |
+| **Tests** | +2 Tests: Stechen löst Gleichstand auf (Wertung), Stechen wird genau einmal erzeugt (Spielplan) → 53/53 grün |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 53/53 grün
+
+---
+
+### Schritt R – 11-Punkte-Paket ✅ *(abgeschlossen, 2026-06-13)*
+
+| Nr | Punkt | Umsetzung |
+|----|-------|-----------|
+| 1 | Logos überall | Logos neben Teamnamen in Teamverwaltung, Spielplan, Matchday, Infoscreen (Nächste/Letzte Partie, Tabelle, Spielplan, Bracket), Gewinner, Auslosung |
+| 2 | Bildschirmfüllend | Infoscreen-Tabelle/Spielplan und Gewinner-Liste über `UniformGrid Columns=1` → Zeilen verteilen sich über die volle Höhe |
+| 3 | Auslosungs-Button | „Zur Gruppenauslosung" im Turnier-Tab (navigiert zum Gruppen-Tab) |
+| 4 | Tabellen-Tab | Neuer Tab „Tabellen" im Verwaltungsbildschirm (Gruppenranglisten mit Logo, Duelldifferenz, Stechen-Markierung) |
+| 5 | „Duelle"-Text | Im Infoscreen entfernt (Letztes Spiel zeigt nur noch „4 : 3") |
+| 6 | Spielplan-Reihenfolge | Round-Robin nach Kreis-Verfahren: jede Mannschaft einmal pro Runde (keine Doppelspiele hintereinander), Gruppen game-by-game abwechselnd |
+| 7 | Finalrunde automatisch | Nach dem letzten Gruppenspiel wird die Finalrunde automatisch erzeugt + Status gewechselt; Bracket-Baum als Folie im Infoscreen |
+| 8 | Tiebreaker/Stechen | Duelldifferenz + „Stechen"-Badge in Tabelle/Infoscreen sichtbar; Auto-Finalrunde wird bei offenem Stechen blockiert (Hinweis). **Offen:** automatisches Erzeugen eines KO-Stechen-Spiels zur Platzierungsauflösung |
+| 9 | Korrektur im Match | „Letzten Versuch rückgängig" in der Spielsteuerung (öffnet ein entschiedenes Duell ggf. wieder) |
+| 10 | Spielplan-Optionen | Kontextmenü je Spiel: Bearbeiten (Ergebnis korrigieren – öffnet abgeschlossenes Spiel wieder), Matchscreen anzeigen, Spiel/Duell starten |
+| 11 | Spielplan im Infoscreen | Neue Spielplan-Folie (kommende Spiele mit Logos) in der Infoscreen-Rotation |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 51/51 grün
+
+---
+
+### Schritt Q – Team-Logos + animierte Beamer-Auslosung ✅ *(abgeschlossen, 2026-06-13)*
+
+**Team-Logos:**
+
+| Bereich | Änderung |
+|---|---|
+| **Datenmodell** | `Team.LogoPfad` (optionaler relativer Pfad) |
+| **LogoService** | Kopiert hochgeladene Bilder nach `logos/<teamId>.<ext>`, liefert relativen Pfad; entfernt alte Logos |
+| **Konverter** | `PfadZuBitmapConverter` (lädt Bild ohne Dateisperre via OnLoad), `PfadZuVisibilityConverter` (blendet Logo-Element aus wenn keine Datei) |
+| **Teamverwaltung** | „Logo hochladen"/„Entfernen" mit Vorschau; Logo-Thumbnail im Team-Listeneintrag |
+| **Matchday (Beamer)** | Team-Logos über den Teamnamen eingeblendet, wenn vorhanden |
+
+**Animierte Auslosung am Beamer (DFB-Pokal-Stil):**
+
+| Bereich | Änderung |
+|---|---|
+| **AnzeigeZustandService** | Neuer Screen `Auslosung`, Datentyp `AuslosungDaten`/`AuslosungEintrag`, Events `AuslosungGestartet`/`AuslosungAbgeschlossen`, Methoden `AuslosungAmBeamerStarten`/`AuslosungBeenden` |
+| **AuslosungAnzeigeViewModel** | Hält Ziehungsreihenfolge + Live-Zustand (Kugelinhalt, Gruppenspalten); ordnet Teams ein; meldet Fertigstellung |
+| **AuslosungView** | Lostrommel (rotierende Glaskugel mit Kugeln), aufsteigende Loskugel die sich in zwei Halbschalen öffnet und Logo+Name enthüllt, danach Einordnung in die Gruppenspalte; Choreografie im Code-Behind (async + DoubleAnimations, ~5 s/Team für Spannung) |
+| **Ablauf** | Operator startet im Gruppen-Tab → `AuslosungAmBeamerStarten` (Anzeige wechselt auf Auslosung, Animation läuft) → nach Abschluss schreibt der Operator-VM die Einteilung ins Turnier (`AuslosungAbgeschlossen`). Operator-Tab zeigt während der Animation „läuft am Beamer" |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 51/51 grün
+
+---
+
+### Schritt P – Turnier-Reset ✅ *(abgeschlossen, 2026-06-13)*
+
+| Bereich | Änderung |
+|---|---|
+| **Reset-Button** | Neben „Status weiterschalten" im Turnier-Tab gibt es jetzt „Zurücksetzen" (rot, mit Sicherheitsabfrage). Setzt das Turnier auf „In Vorbereitung" zurück: Gruppeneinteilung, Spielplan, Finalrunde und Ergebnisse werden verworfen, **Teams und Spieler bleiben erhalten**. Anzeige wechselt zurück auf den Startscreen |
+| **Command-Logik** | Neues `TurnierZuruecksetzenCommand` (nur aktiv wenn Status ≠ InVorbereitung). `StatusWechselnCommand` und das Reset-Command werden in `TurnierInfoAktualisieren` explizit neu bewertet, da ein reiner Statuswechsel `HatGeladenesTurnier` nicht ändert |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 51/51 grün
+
+---
+
+### Schritt O – Teamverwaltung-Fix, Gruppenauslosung, Spielplan-Politur ✅ *(abgeschlossen, 2026-06-13)*
+
+| Bereich | Änderung |
+|---|---|
+| **Teamverwaltung-Fix** | `TeamverwaltungView.xaml.cs` (Code-Behind) fehlte → die View wurde leer instanziiert (kein `InitializeComponent`). Nachgereicht; Teams werden jetzt angezeigt und sind editierbar |
+| **Gruppen-Tab + Auslosung** | Neuer Tab „Gruppen" mit animierter Auslosung (DFB-Pokal-Prinzip): Teams werden gemischt und per Timer abwechselnd je Gruppe gezogen; jede Team-Kugel poppt animiert in ihre Gruppe (BackEase). Ziehungs-Hero zeigt das aktuell gezogene Team + Zielgruppe. Danach Gruppen-Einteilungsübersicht; „Neu auslosen" möglich solange in Vorbereitung. Neues `GruppenAuslosungViewModel` + View, DI, Tab-Index-Anpassung (Spielstart → Index 4) |
+| **Gruppenbildung verlagert** | Die Zuteilung passiert jetzt in der Auslosung (persistiert in `turnier.Gruppen`). `TurnierVerwaltungViewModel.StatusWechseln` erzeugt keine Gruppen mehr selbst, sondern verlangt eine vorhandene Auslosung (sonst Hinweis). `AnzahlGruppen`-Auswahl vom Turnier-Tab in den Gruppen-Tab verschoben |
+| **Spielplan-Politur** | Hero-Karte „Nächstes Spiel" mit Verlauf + Akzent-Button; Spielzeilen als Karten mit farbigen Status-Pills (Läuft=grün, Abgeschlossen=grau, Verschoben=orange, Abgesetzt=rot), goldener Akzentrand für das nächste Spiel, „vs"-Chip, klarer Spaltenheader |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 51/51 grün
+
+---
+
+### Schritt N – Crash-Fix, Teamverwaltung, Auto-Scroll ✅ *(abgeschlossen, 2026-06-13)*
+
+| Bereich | Änderung |
+|---|---|
+| **Crash-Fix Spielplan** | `SpielplanView` stürzte ab, weil `ItemContainerStyle` auf den nicht auflösbaren Ressourcen-Key `MaterialDesignListViewItem` verwies. Statusfarben (Läuft/Abgeschlossen/Abgesetzt) jetzt über einen Border in der Zeilenvorlage – ohne fremde Style-Abhängigkeit |
+| **Teamverwaltung (neuer Tab)** | Eigener Menüpunkt „Teamverwaltung" mit großflächigem 2-Spalten-Layout: links Teamliste + Team anlegen, rechts Teamdetails (Name/Kürzel editierbar) und Spielerverwaltung (hinzufügen, umbenennen mit Auto-Save, entfernen). Team entfernen nur in Vorbereitungsphase. Neues `TeamverwaltungViewModel` + `TeamverwaltungView`, DI-Registrierung, Tab-Index-Anpassung (Spielstart-Navigation → Index 3) |
+| **Turnier-Tab entschlackt** | Beengte Spielerverwaltung entfernt; Verweis-Box auf den neuen Teamverwaltungs-Tab |
+| **Speichern/Laden mit Feedback** | Beide Buttons gaben keine Rückmeldung → wirkten funktionslos. Jetzt Bestätigungs-Dialoge; Laden fängt `FileNotFoundException` mit klarer Meldung ab |
+| **Auto-Scroll Anzeige** | Neues Attached-Behavior `AutoScrollVerhalten`: scrollt lange Listen langsam (Credits-Stil: Pause oben → abwärts → Pause unten → aufwärts → Schleife), nur bei Überlauf. Angewendet auf Gewinner-Platzierungen und Infoscreen-Gruppentabelle |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 51/51 grün
+
+---
+
+### Schritt M – Visuelles Redesign ✅ *(abgeschlossen, 2026-06-13)*
+
+Ziel: Anzeige (Beamer) maximal modern/aufregend für das Publikum, Bedienung maximal effektiv/intuitiv.
+
+**Anzeige (Beamer):**
+
+| Bereich | Änderung |
+|---|---|
+| **Styles.xaml** | Komplett neues Design-System: diagonaler Mitternachts-Farbverlauf als Hintergrund, goldener Akzent-Verlauf, Glow-Effekte (Gold/Rot), Karten-Schatten, schwebende Karten-Style |
+| **Score-Typografie** | Score auf 120px mit goldenem Glühen; Teamnamen 44px; Sieger 84px mit Glow |
+| **MatchdayView** | Dramatischer Score-Header mit Verlauf, pulsierender „LIVE"-Indikator (Storyboard-Animation), Duell-Zeilen als abgerundete Karten mit Nummern-Kreisen und Ergebnis-Pillen |
+| **StartscreenView** | Radialer Lichtschein hinter Logo, Logo-Schatten, goldene Trennlinie, größere Uhrzeit, Begrüßungszeile |
+| **InfoscreenView** | Karten-basierte Folien mit Schatten, „VS"-Badge, Akzent-Balken im Header, modernisierte Gruppentabelle mit Zeilen-Karten |
+| **GewinnerView** | Goldener Lichtschein, Sieger mit Stern-Rahmung + Glow, Platzierungen als Karten mit Platz-Kreisen |
+| **AnzeigeWindow** | Hintergrund auf `#0B0B1A` (tiefer) angepasst |
+
+**Bedienung (Operator):**
+
+| Bereich | Änderung |
+|---|---|
+| **App.xaml** | Sekundärfarbe Lime → Amber (Markenkohärenz mit dem Gold der Anzeige) |
+| **BedienWindow** | Neue dunkle Navigationsleiste (220px) mit Marken-Header („Kirchenbirkiger Schluck / TURNIERLEITUNG"), goldenem Akzentbalken, custom TabItem-Template mit klarer Auswahl-Markierung (goldener Randbalken + Hervorhebung), Hover-Zustand |
+| **Versuch-Buttons** | Höhe 60→72px für schnellere, treffsicherere Bedienung während des Spiels |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 51/51 grün
+
+---
+
+### Schritt L – Operator-UX ✅ *(abgeschlossen, 2026-06-13)*
+
+| Bereich | Änderung |
+|---|---|
+| **SpielplanView** | `ItemContainerStyle` mit DataTriggern: laufende Spiele grün + halbfett, abgeschlossene Spiele auf 50 % Opacity gedimmt, abgesetzte auf 25 % |
+| **SpielsteuerungView** | „Spiel abschließen" immer sichtbar (war: nur bei KannSpielAbschliessen=True); Button ist disabled solange Bedingung nicht erfüllt; erklärender Hinweistext sichtbar wenn noch nicht alle 5 Duelle gespielt |
+| **TurnierVerwaltungViewModel** | `KannTeamHinzufuegen()` prüft jetzt Status = InVorbereitung — Teams können nach Gruppenphase-Start nicht mehr hinzugefügt werden |
+| **TurnierVerwaltungView** | Hinweis-TextBlock erscheint ab Gruppenphase: „Teams können nach dem Start nicht mehr geändert werden." |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 51/51 grün
+
+---
+
+### Schritt K – UX-Feinschliff ✅ *(abgeschlossen, 2026-06-12)*
+
+| Bereich | Änderung |
+|---|---|
+| **EinstellungenViewModel** | Neue `BackupEintragModel`-Record mit `Pfad` + `Anzeigename`; Backup-Liste zeigt jetzt nur Dateinamen, nicht mehr volle Pfade |
+| **EinstellungenView** | `SelectedItem="{Binding AusgewaehltesBackup}"` + `{Binding Anzeigename}` statt `{Binding}` auf vollem Pfad |
+| **MatchdayViewModel** | Duell-Ergebnis: `✓ –` / `– ✓` → `1 : 0` / `0 : 1` / `½ : ½` — für Beamerpublikum eindeutig lesbar |
+| **SpielsteuerungViewModel** | Gleiches Format für Konsistenz zwischen Bedien- und Anzeigeoberfläche |
+| **AnzeigeWindowViewModel** | `ScreenWechseln()` ruft beim Wechsel auf Infoscreen `InfoscreenVm.Aktualisieren()` auf — Rotation startet immer ab Folie 1 (Nächste Partie) statt an zufälliger Stelle |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 51/51 grün
+
+---
+
+### Schritt J – UI-Polishing ✅ *(abgeschlossen, 2026-06-12)*
+
+| Bereich | Änderung |
+|---|---|
+| **VersuchButtonStyle** | `BasedOn="{StaticResource MaterialDesignRaisedButton}"` ergänzt — vorher verloren die 4 Buttons in SpielsteuerungView das gesamte Material-Design-Styling |
+| **GewinnerView** | Sieger-Box von `#1A1A00` (praktisch unsichtbar auf `#1A1A2E`) auf `#2A2400` mit goldenem Top/Bottom-Border geändert — der Höhepunkt des Abends ist jetzt visuell präsent |
+| **PlatzierungZeileStyle** | Sieger-Zeile: `#2D2D00` → `#3A3200` + goldener Linker Rand (4px) für klare Hervorhebung |
+| **KorrekturView** | DataGrid-Card wird ausgeblendet wenn keine Einträge — vorher zeigte sie eine leere Tabelle auf demselben Grid.Row wie der Hinweistext |
+| **GewinnerView** | Emoji-Text „🏆 Turniersieger" durch profesionelles „— Turniersieger —" ersetzt |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 51/51 grün
+
+---
+
+### Schritt I – Anzeige-Qualität ✅ *(abgeschlossen, 2026-06-12)*
+
+| Bereich | Änderung |
+|---|---|
+| **MatchdayViewModel** | `SpielAktualisieren()` zeigt jetzt alle 5 geplanten Duell-Slots sofort ab Spielstart (IstGeplant-Vorschau), nicht erst nach dem ersten erfassten Duell |
+| **MatchdayView** | Opacity-Trigger (0.4) für `IstGeplant`-Zeilen — geplante Duelle werden gedimmt dargestellt |
+| **InfoscreenView** | Tabellen-Header mit Spaltenbezeichnungen Pl. / Team / Sp. / S. / Pkt. — vorher war der Header leer und nach der Datentabelle positioniert |
+| **GewinnerViewModel** | Sieger-Erkennung funktioniert jetzt auch für Kurz-Modus: Fallback auf „Platz 1/2"-Spiel wenn kein „Finale"-Bracket vorhanden |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 51/51 grün
+
+---
+
+### Schritt H – UI-Bugfixes + Setup-Führung ✅ *(abgeschlossen, 2026-06-12)*
+
+| Bereich | Änderung |
+|---|---|
+| **SpielsteuerungView** | XAML-Spalten-Bug behoben: `vs.`-Label und ComboBox2 lagen beide in Grid.Column 2 und überlagerten sich |
+| **Platzhalter-Spieler** | Beim Übergang zu Gruppenphase erhalten Teams ohne Spieler automatisch „Spieler 1–5" |
+| **Auto-Screen-Wechsel** | Anzeigeoberfläche wechselt bei Start der Gruppenphase/Finalrunde automatisch auf Infoscreen |
+| **Setup-Führung** | Hinweistext (NaechsterSchrittHinweis) unter dem Status-Chip; Spielerverwaltungs-Header immer sichtbar; Hinweis wenn kein Team ausgewählt |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 51/51 grün
+
+---
+
+### Schritt G – Erste lauffähige Version ✅ *(abgeschlossen, 2026-06-12)*
+
+| Bereich | Änderung |
+|---|---|
+| **Gruppen-Setup** | `TurnierVerwaltungViewModel`: Anzahl Gruppen (1–4) und FinalrundenModus konfigurierbar |
+| **Spielplan-Generierung** | `StatusWechseln` InVorbereitung→Gruppenphase: erstellt Gruppen, verteilt Teams, ruft `GruppenspielplanGenerieren()` auf |
+| **Finalrunden-Generierung** | `StatusWechseln` Gruppenphase→Finalrunde: setzt `FinalrundenModus` + ruft `FinalrundeGenerieren()` auf |
+| **Spieler-Verwaltung** | Teams-Card: Team auswählen → Spieler per Name hinzufügen; wird für Duell-ComboBoxen verwendet |
+| **Auto-Load beim Start** | `App.xaml.cs`: lädt `turnier.json` beim Start automatisch (stilles Scheitern wenn nicht vorhanden) |
+| **Auto-Backup** | `SpielsteuerungViewModel.SpielAbschliessen`: `BackupManager.BackupErstellen()` nach jedem Spielabschluss |
+| **BracketFortsetzung** | `SpielsteuerungViewModel.SpielAbschliessen`: `BracketFortsetzungAktualisieren()` bei Finalrundenspielen |
+| **Gewinner-Screen** | `StatusWechseln` Finalrunde→Abgeschlossen: schaltet Anzeige automatisch auf Gewinner-Screen |
+
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 51/51 grün
 
 ---
 
@@ -98,15 +383,21 @@ Wird relevant, wenn ein zweites Datenformat (V2) eingeführt wird.
 
 ---
 
-### Schritt F – UI: BedienWindow & AnzeigeWindow *(nach A + B + C)*
+### Schritt F – UI: BedienWindow & AnzeigeWindow ✅ *(abgeschlossen, 2026-06-12)*
 
 | Bereich | Beschreibung |
 |---|---|
-| ViewModels | MVVM-Klassen für Spielplan, Ergebniseingabe, Gruppenrangliste |
-| BedienWindow | Spielplan-Ansicht, Duell-/Versuchserfassung, Korrekturfunktionen |
-| AnzeigeWindow | Beamer-View: Spielstand live, Gruppenrangliste, Bracket, Siegeranzeige, Infoscreen |
+| **Services** | `TurnierZustandService` (Turnier-State + Event), `AnzeigeZustandService` (Screen-Steuerung + SpielZustand-Event) |
+| **Anzeige-ViewModels** (5) | `StartscreenViewModel` (Uhrzeit-Timer), `InfoscreenViewModel` (rotierende Slides), `MatchdayViewModel` (Live-Duell-Anzeige), `GewinnerViewModel` (Endplatzierung), `AnzeigeWindowViewModel` (Shell + DataTemplate-Dispatch) |
+| **Bedienungs-ViewModels** (6) | `TurnierVerwaltungViewModel`, `SpielplanViewModel`, `SpielsteuerungViewModel`, `KorrekturViewModel`, `EinstellungenViewModel`, `BedienWindowViewModel` (Shell + Tab-Navigation) |
+| **Anzeige-Views** (4) | `StartscreenView`, `InfoscreenView`, `MatchdayView`, `GewinnerView` (UserControls) |
+| **Bedienungs-Views** (5) | `TurnierVerwaltungView`, `SpielplanView`, `SpielsteuerungView`, `KorrekturView`, `EinstellungenView` (UserControls) |
+| **BedienWindow** | TabControl (links) + ContentControl (rechts) mit DataTemplate-Dispatch; 5 Tabs (Icon + Label) |
+| **AnzeigeWindow** | ContentControl mit DataTemplates für alle 4 Screen-VMs; dunkel, Vollbild |
+| **Ressourcen** | `Resources/Styles.xaml` (Anzeige-Typografie, Score-Styles, Versuch-Button-Styles), Logo-Asset |
+| **DI-Verdrahtung** | Alle Services + VMs als Singleton, Fenster als Transient; Multi-Screen-Positionierung |
 
-*Abhängigkeiten: Schritte A, B und C müssen fertig sein.*
+Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 51/51 grün
 
 ---
 

@@ -35,17 +35,33 @@ public class FinalrundeTests
         // Act
         _sut.FinalrundeGenerieren(turnier);
 
-        // Assert: A1 vs B1, A2 vs B2, A3 vs B3
+        // Assert: A1 vs B1, A2 vs B2, A3 vs B3 … (Paarung je Platzierung, reihenfolge-unabhängig)
         turnier.Finalrundenspiele.Should().HaveCount(6);
         var g1Teams = turnier.Gruppen[0].TeamIds;
         var g2Teams = turnier.Gruppen[1].TeamIds;
 
         for (int i = 0; i < 6; i++)
         {
-            var spiel = turnier.Finalrundenspiele[i];
+            var spiel = turnier.Finalrundenspiele.Single(s => s.BracketRunde == $"Platz {i * 2 + 1}/{i * 2 + 2}");
             spiel.Team1Id.Should().Be(g1Teams[i]);
             spiel.Team2Id.Should().Be(g2Teams[i]);
         }
+    }
+
+    [Fact]
+    public void Kurz_SpielUmPlatzEins_WirdZuletztGespielt()
+    {
+        // Arrange
+        var turnier = TurnierMitZweiGruppenBauen(6, 6, FinalrundenModus.Kurz);
+        GruppenspielplanAbschliessen(turnier);
+
+        // Act
+        _sut.FinalrundeGenerieren(turnier);
+
+        // Assert: Das Spiel um Platz 1/2 hat die höchste Spielnummer aller Finalrundenspiele
+        var platzEins = turnier.Finalrundenspiele.Single(s => s.BracketRunde == "Platz 1/2");
+        var maxNummer = turnier.Finalrundenspiele.Max(s => s.Spielnummer);
+        platzEins.Spielnummer.Should().Be(maxNummer);
     }
 
     [Fact]
@@ -120,22 +136,6 @@ public class FinalrundeTests
     }
 
     [Fact]
-    public void KoBaum_ZweiGruppenJe6_KoBaumZwei_KeinFinale()
-    {
-        // Arrange
-        var turnier = TurnierMitZweiGruppenBauen(6, 6, FinalrundenModus.KoBaumZwei);
-        GruppenspielplanAbschliessen(turnier);
-
-        // Act
-        _sut.FinalrundeGenerieren(turnier);
-
-        // Assert: kein gemeinsames Finale
-        turnier.Finalrundenspiele.Count(s => s.BracketRunde == "Finale").Should().Be(0);
-        // Aber 2 Halbfinale (die je eigene Gruppenfinale sind)
-        turnier.Finalrundenspiele.Count(s => s.BracketRunde == "Halbfinale").Should().Be(2);
-    }
-
-    [Fact]
     public void KoBaum_ZweiGruppenJe5_ErzeugtZweiAchtelfinaleSpiele()
     {
         // Arrange: Gruppe A hat 5 Teams → nur B5 als Füller (B6 fehlt)
@@ -148,6 +148,58 @@ public class FinalrundeTests
         // Assert: nur 2 Achtelfinale (A3 vs B5, B3 vs A5 — A4/B6 und B4/A6 fehlen)
         var achtel = turnier.Finalrundenspiele.Where(s => s.BracketRunde == "Achtelfinale").ToList();
         achtel.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void KoBaum_KoBaumEin_ErzeugtSpielUmPlatz3()
+    {
+        // Arrange
+        var turnier = TurnierMitZweiGruppenBauen(6, 6, FinalrundenModus.KoBaumEin);
+        GruppenspielplanAbschliessen(turnier);
+
+        // Act
+        _sut.FinalrundeGenerieren(turnier);
+
+        // Assert: genau 1 Spiel um Platz 3, das den Verlierer der Vorgänger übernimmt
+        var platz3 = turnier.Finalrundenspiele.Where(s => s.BracketRunde == "Spiel um Platz 3").ToList();
+        platz3.Should().HaveCount(1);
+        platz3[0].VorgaengerVerlierer.Should().BeTrue();
+        platz3[0].VorgaengerSpiel1Id.Should().NotBeNull();
+        platz3[0].VorgaengerSpiel2Id.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void BracketFortsetzung_SpielUmPlatz3_TraegtVerliererEin()
+    {
+        // Arrange
+        var turnier = TurnierMitZweiGruppenBauen(6, 6, FinalrundenModus.KoBaumEin);
+        GruppenspielplanAbschliessen(turnier);
+        _sut.FinalrundeGenerieren(turnier);
+
+        var halbfinale = turnier.Finalrundenspiele.First(s => s.BracketRunde == "Halbfinale");
+        halbfinale.Team1Id = Guid.NewGuid();
+        halbfinale.Team2Id = Guid.NewGuid();
+        var verliererId = halbfinale.Team2Id!.Value;
+
+        halbfinale.Status   = SpielStatus.Abgeschlossen;
+        halbfinale.Ergebnis = new SpielErgebnis { SiegerId = halbfinale.Team1Id!.Value };
+
+        // Act
+        _sut.BracketFortsetzungAktualisieren(turnier, halbfinale);
+
+        // Assert: Im Spiel um Platz 3 steht der Verlierer, im Finale der Sieger
+        var platz3 = turnier.Finalrundenspiele.First(s => s.BracketRunde == "Spiel um Platz 3");
+        var finale = turnier.Finalrundenspiele.First(s => s.BracketRunde == "Finale");
+
+        bool verliererEingetragen =
+            (platz3.VorgaengerSpiel1Id == halbfinale.Id && platz3.Team1Id == verliererId) ||
+            (platz3.VorgaengerSpiel2Id == halbfinale.Id && platz3.Team2Id == verliererId);
+        verliererEingetragen.Should().BeTrue("Der Halbfinal-Verlierer muss ins Spiel um Platz 3.");
+
+        bool siegerImFinale =
+            (finale.VorgaengerSpiel1Id == halbfinale.Id && finale.Team1Id == halbfinale.Ergebnis.SiegerId) ||
+            (finale.VorgaengerSpiel2Id == halbfinale.Id && finale.Team2Id == halbfinale.Ergebnis.SiegerId);
+        siegerImFinale.Should().BeTrue("Der Halbfinal-Sieger muss ins Finale.");
     }
 
     // ---------------------------------------------------------------------------

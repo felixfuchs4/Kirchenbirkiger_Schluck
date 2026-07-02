@@ -1,0 +1,138 @@
+<UserControl x:Class="KirchenbirkigerSchluck.App.Views.Anzeige.GewinnerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Datei:   GewinnerView.xaml
+        Zweck:   Schrittweise Siegerehrung (Torschützenkönig + Teams), manuell weitergeschaltet
+        Bereich: Präsentation – Anzeige-Views
+    -->
+    <Grid Background="{StaticResource AnzeigeHintergrund}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Goldener Lichtschein -->
+        <Ellipse Grid.Row="0" Grid.RowSpan="3"
+                 Width="1300" Height="900"
+                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                 Opacity="0.16">
+            <Ellipse.Fill>
+                <RadialGradientBrush>
+                    <GradientStop Color="#FFC84B" Offset="0.0" />
+                    <GradientStop Color="#00FFC84B" Offset="1.0" />
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+
+        <!-- Turniertitel -->
+        <TextBlock Grid.Row="0" Text="{Binding TurnierName}"
+                   Style="{StaticResource UeberschriftAnzeigeStyle}"
+                   FontSize="38" Margin="40,40,40,0" />
+
+        <!-- Aktueller Ehrungsschritt -->
+        <Border Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                MinWidth="760" Padding="80,48"
+                Visibility="{Binding HatSchritte, Converter={StaticResource BoolToVisibility}}">
+            <Border.Style>
+                <Style TargetType="Border" BasedOn="{StaticResource AnzeigeKarteStyle}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding AktuellerSchritt.IstSieger}" Value="True">
+                            <Setter Property="BorderBrush" Value="{StaticResource AnzeigeAkzent}" />
+                            <Setter Property="BorderThickness" Value="3" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <StackPanel HorizontalAlignment="Center">
+                <!-- Phasentitel -->
+                <TextBlock Text="{Binding AktuellerSchritt.PhasenTitel}"
+                           Foreground="{StaticResource AnzeigeAkzent}"
+                           FontSize="26" FontWeight="Bold" HorizontalAlignment="Center"
+                           Effect="{StaticResource GoldGlowSoft}" Margin="0,0,0,8" />
+
+                <!-- Sieger-Banner -->
+                <TextBlock Text="★  SIEGER  ★"
+                           Foreground="{StaticResource AnzeigeAkzent}"
+                           FontSize="22" FontWeight="Bold" HorizontalAlignment="Center"
+                           Margin="0,0,0,10"
+                           Visibility="{Binding AktuellerSchritt.IstSieger, Converter={StaticResource BoolToVisibility}}" />
+
+                <!-- Platzierung (pro Folie nur einmal, oben, betont) -->
+                <TextBlock HorizontalAlignment="Center" Foreground="{StaticResource AnzeigeAkzent}"
+                           FontSize="44" FontWeight="Bold" Margin="0,0,0,24"
+                           Effect="{StaticResource GoldGlowSoft}"
+                           Text="{Binding AktuellerSchritt.Platz, StringFormat='{}{0}. Platz'}" />
+
+                <!-- Spieler-Layout: einzelner Spieler mit Logo, Name, Team und Detail -->
+                <StackPanel HorizontalAlignment="Center"
+                            Visibility="{Binding AktuellerSchritt.IstSpieler, Converter={StaticResource BoolToVisibility}}">
+                    <!-- Logo -->
+                    <Image Source="{Binding AktuellerSchritt.LogoPfad, Converter={StaticResource PfadZuBitmap}}"
+                           Height="160" Stretch="Uniform" Margin="0,0,0,20"
+                           Visibility="{Binding AktuellerSchritt.LogoPfad, Converter={StaticResource PfadZuVisibility}}" />
+
+                    <!-- Name -->
+                    <TextBlock Text="{Binding AktuellerSchritt.Name}"
+                               Style="{StaticResource SiegerHervorhebungStyle}" FontSize="68" />
+
+                    <!-- Untertitel (Team bei Spielern) -->
+                    <TextBlock Text="{Binding AktuellerSchritt.Untertitel}"
+                               Foreground="{StaticResource AnzeigeText}" FontSize="28"
+                               HorizontalAlignment="Center" Margin="0,8,0,0"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+
+                    <!-- Detail (Treffer / Quote) -->
+                    <Border Background="#1E1B3A" CornerRadius="20" Padding="28,10"
+                            Margin="0,24,0,0" HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding AktuellerSchritt.Detail}"
+                                   Foreground="{StaticResource AnzeigeAkzent}"
+                                   FontSize="26" FontWeight="Bold" />
+                    </Border>
+                </StackPanel>
+
+                <!-- Team-Layout: ein oder mehrere Teams desselben Platzes nebeneinander -->
+                <ItemsControl ItemsSource="{Binding AktuellerSchritt.Teams}"
+                              HorizontalAlignment="Center"
+                              Visibility="{Binding AktuellerSchritt.IstSpieler, Converter={StaticResource InverseBoolToVisibility}}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel HorizontalAlignment="Center" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="32,10" VerticalAlignment="Top" HorizontalAlignment="Center">
+                                <!-- Logo -->
+                                <Image Source="{Binding LogoPfad, Converter={StaticResource PfadZuBitmap}}"
+                                       Height="130" Stretch="Uniform" Margin="0,0,0,16"
+                                       Visibility="{Binding LogoPfad, Converter={StaticResource PfadZuVisibility}}" />
+
+                                <!-- Teamname -->
+                                <TextBlock Text="{Binding TeamName}"
+                                           Style="{StaticResource SiegerHervorhebungStyle}" FontSize="52"
+                                           TextAlignment="Center" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <!-- Platzhalter, wenn keine Siegerehrung verfügbar -->
+        <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Visibility="{Binding HatSchritte, Converter={StaticResource InverseBoolToVisibility}}">
+            <TextBlock Text="Siegerehrung steht noch nicht bereit"
+                       Style="{StaticResource UeberschriftAnzeigeStyle}" FontSize="32" />
+            <TextBlock Text="Das Turnier muss abgeschlossen sein."
+                       Style="{StaticResource AnzeigeTextGedaempftStyle}" FontSize="22"
+                       HorizontalAlignment="Center" Margin="0,10,0,0" />
+        </StackPanel>
+
+        <!-- Fortschritt -->
+        <TextBlock Grid.Row="2" Text="{Binding Fortschritt}"
+                   Foreground="{StaticResource AnzeigeTextGedaempft}" FontSize="18"
+                   HorizontalAlignment="Center" Margin="0,0,0,28" />
+    </Grid>
+</UserControl>
