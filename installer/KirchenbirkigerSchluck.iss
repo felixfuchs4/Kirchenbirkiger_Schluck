@@ -15,7 +15,7 @@
 ; und bleiben bei einer Deinstallation erhalten.
 
 #define MeinName "Kirchenbirkiger Schluck"
-#define MeinVersion "1.0.0"
+#define MeinVersion "1.1.0"
 #define MeinAutor "Kirchenbirkiger Schluck Entwicklungsteam"
 #define MeinExe "KirchenbirkigerSchluck.App.exe"
 
