@@ -235,8 +235,243 @@ public class FinalrundeTests
     }
 
     // ---------------------------------------------------------------------------
+    // KO-Baum: einheitlicher generischer Builder für jede Gruppenanzahl
+    // ---------------------------------------------------------------------------
+
+    [Theory]
+    [InlineData(6)]                 // 1 Gruppe
+    [InlineData(3)]                 // 1 Gruppe, ungerade Teamzahl → Freilose
+    [InlineData(3, 3)]              // 2 Gruppen à 3 (früher toter Slot!)
+    [InlineData(4, 4)]              // 2 Gruppen à 4
+    [InlineData(5, 4)]              // 2 Gruppen, ungleich/ungerade gesamt
+    [InlineData(6, 6)]             // 2 Gruppen à 6 (Standardfall)
+    [InlineData(6, 6, 6)]           // 3 Gruppen
+    [InlineData(4, 4, 4)]           // 3 Gruppen, kleiner
+    [InlineData(5, 6, 4)]           // 3 Gruppen, unterschiedlich groß
+    [InlineData(6, 6, 6, 6)]        // 4 Gruppen
+    [InlineData(3, 3, 3, 3)]        // 4 Gruppen, klein
+    public void KoBaum_ErzeugtLueckenlosesBracket(params int[] gruppenGroessen)
+    {
+        // Arrange
+        var turnier = TurnierMitNGruppenBauen(FinalrundenModus.KoBaumEin, gruppenGroessen);
+        GruppenspielplanAbschliessen(turnier);
+
+        // Act
+        _sut.FinalrundeGenerieren(turnier, new Random(12345));
+
+        // Assert
+        var finale = turnier.Finalrundenspiele;
+        int teamAnzahl = gruppenGroessen.Sum();
+
+        // 1) Keine toten Slots: jede Seite hat entweder ein Team oder einen Vorgänger.
+        finale.Should().OnlyContain(s =>
+            (s.Team1Id.HasValue || s.VorgaengerSpiel1Id.HasValue) &&
+            (s.Team2Id.HasValue || s.VorgaengerSpiel2Id.HasValue),
+            "kein Bracket-Slot darf ohne Team und ohne Vorgängerspiel bleiben");
+
+        // 2) Jedes Team ist genau einmal Startteilnehmer (direkt gesetzt); alle Gruppen vertreten.
+        var starter = finale
+            .SelectMany(s => new[] { s.Team1Id, s.Team2Id })
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .ToList();
+        starter.Should().HaveCount(teamAnzahl);
+        starter.Should().OnlyHaveUniqueItems();
+        starter.Should().BeEquivalentTo(turnier.Teams.Select(t => t.Id));
+
+        // 3) Genau ein Finale.
+        finale.Count(s => s.BracketRunde == "Finale").Should().Be(1);
+
+        // 4) Spiel um Platz 3 genau dann, wenn es zwei echte Halbfinal-Spiele gibt.
+        int halbfinals = finale.Count(s => s.BracketRunde == "Halbfinale");
+        int platz3 = finale.Count(s => s.BracketRunde == "Spiel um Platz 3");
+        platz3.Should().Be(halbfinals == 2 ? 1 : 0);
+
+        // 5) Anzahl Spiele = (Teams − 1) KO-Spiele + optionales Spiel um Platz 3.
+        finale.Should().HaveCount(teamAnzahl - 1 + platz3);
+    }
+
+    [Theory]
+    [InlineData(6)]
+    [InlineData(3, 3)]              // 2 Gruppen à 3 (früher toter Slot!)
+    [InlineData(4, 4)]
+    [InlineData(5, 4)]
+    [InlineData(6, 6)]
+    [InlineData(6, 6, 6)]
+    [InlineData(4, 4, 4)]
+    [InlineData(6, 6, 6, 6)]
+    [InlineData(3, 3, 3, 3)]
+    public void KoBaum_IstVollstaendigDurchspielbar(params int[] gruppenGroessen)
+    {
+        // Arrange
+        var turnier = TurnierMitNGruppenBauen(FinalrundenModus.KoBaumEin, gruppenGroessen);
+        GruppenspielplanAbschliessen(turnier);
+        _sut.FinalrundeGenerieren(turnier, new Random(999));
+
+        // Act: Bracket komplett durchspielen (jeweils Team1 gewinnt)
+        FinalrundeDurchspielen(turnier);
+
+        // Assert: kein Spiel bleibt hängen – wären Slots tot, käme ein Spiel nie zu zwei Teams.
+        turnier.Finalrundenspiele.Should().OnlyContain(s => s.Status == SpielStatus.Abgeschlossen,
+            "ein lückenloses Bracket muss vollständig spielbar sein");
+    }
+
+    [Theory]
+    [InlineData(4, 4)]              // 2 Gruppen à 4 (8er-Bracket, keine Freilose)
+    [InlineData(8, 8)]              // 2 Gruppen à 8 (16er-Bracket)
+    [InlineData(4, 4, 4, 4)]        // 4 Gruppen à 4 (16er-Bracket)
+    [InlineData(2, 2, 2, 2)]        // 4 Gruppen à 2 (8er-Bracket)
+    public void KoBaum_GruppenWerdenDurchmischt_KeineErsteRundeGleicherGruppe(params int[] gruppenGroessen)
+    {
+        // Arrange
+        var turnier = TurnierMitNGruppenBauen(FinalrundenModus.KoBaumEin, gruppenGroessen);
+        GruppenspielplanAbschliessen(turnier);
+
+        // Gruppenzugehörigkeit je Team
+        var gruppeVon = new Dictionary<Guid, int>();
+        for (int gi = 0; gi < turnier.Gruppen.Count; gi++)
+            foreach (var id in turnier.Gruppen[gi].TeamIds)
+                gruppeVon[id] = gi;
+
+        // Über mehrere Auslosungen prüfen: in der ersten Runde tritt nie Gruppe gegen sich selbst an.
+        for (int seed = 0; seed < 20; seed++)
+        {
+            _sut.FinalrundeGenerieren(turnier, new Random(seed));
+
+            string ersteRunde = RundenNameFuer(NaechsteZweierpotenz(gruppenGroessen.Sum()));
+            var ersteRundenSpiele = turnier.Finalrundenspiele
+                .Where(s => s.BracketRunde == ersteRunde && s.Team1Id.HasValue && s.Team2Id.HasValue);
+
+            foreach (var spiel in ersteRundenSpiele)
+                gruppeVon[spiel.Team1Id!.Value].Should().NotBe(gruppeVon[spiel.Team2Id!.Value],
+                    $"Erste-Runde-Spiele sollen Gruppen durchmischen (Seed {seed})");
+        }
+    }
+
+    [Theory]
+    [InlineData(2, 2, 2)]           // 3 Gruppen, T=6 → N=8, 2 Freilose
+    [InlineData(6, 6, 6)]           // 3 Gruppen, T=18 → N=32, 14 Freilose
+    [InlineData(3, 3, 3, 3)]        // 4 Gruppen, T=12 → N=16, 4 Freilose
+    public void KoBaum_Freilose_GehenAnDieBestplatziertenTeams(params int[] gruppenGroessen)
+    {
+        // Arrange
+        var turnier = TurnierMitNGruppenBauen(FinalrundenModus.KoBaumEin, gruppenGroessen);
+        GruppenspielplanAbschliessen(turnier);
+        _sut.FinalrundeGenerieren(turnier, new Random(7));
+
+        // Platzierungs-Ebene je Team (0 = Gruppensieger) aus den Gruppen-Ranglisten
+        var wertung = new WertungsService();
+        var ebeneVon = new Dictionary<Guid, int>();
+        foreach (var gruppe in turnier.Gruppen)
+        {
+            var rang = wertung.GruppenRanglisteBerechnen(gruppe, turnier.Wertungssystem).ToList();
+            for (int i = 0; i < rang.Count; i++)
+                ebeneVon[rang[i].TeamId] = i;
+        }
+
+        // Freilos-Teams = Teams, die nicht in der ersten Runde (Runde der Bracketgröße) starten
+        int bracketGroesse = NaechsteZweierpotenz(gruppenGroessen.Sum());
+        string ersteRunde = RundenNameFuer(bracketGroesse);
+        var ersteRundenTeams = turnier.Finalrundenspiele
+            .Where(s => s.BracketRunde == ersteRunde)
+            .SelectMany(s => new[] { s.Team1Id, s.Team2Id })
+            .Where(id => id.HasValue).Select(id => id!.Value)
+            .ToHashSet();
+
+        var freilosTeams = turnier.Teams.Select(t => t.Id).Where(id => !ersteRundenTeams.Contains(id)).ToList();
+        var nichtFreilos = turnier.Teams.Select(t => t.Id).Where(ersteRundenTeams.Contains).ToList();
+
+        // Assert: kein Freilos-Team ist schlechter platziert als ein Team, das die erste Runde spielt.
+        freilosTeams.Should().NotBeEmpty();
+        int schlechtesteFreilosEbene = freilosTeams.Max(id => ebeneVon[id]);
+        int besteSpielEbene = nichtFreilos.Min(id => ebeneVon[id]);
+        schlechtesteFreilosEbene.Should().BeLessThanOrEqualTo(besteSpielEbene,
+            "Freilose gehen zuerst an die bestplatzierten Teams");
+    }
+
+    [Fact]
+    public void KoBaum_EineGruppeDreiTeams_ErzeugtEinHalbfinaleUndFinaleOhnePlatz3()
+    {
+        // Arrange: 1 Gruppe mit 3 Teams → Bester bekommt Freilos ins Finale
+        var turnier = TurnierMitNGruppenBauen(FinalrundenModus.KoBaumEin, 3);
+        GruppenspielplanAbschliessen(turnier);
+
+        // Act
+        _sut.FinalrundeGenerieren(turnier, new Random(1));
+
+        // Assert: 1 Halbfinale + 1 Finale, kein Spiel um Platz 3 (nur ein Halbfinal-Verlierer)
+        var finale = turnier.Finalrundenspiele;
+        finale.Count(s => s.BracketRunde == "Halbfinale").Should().Be(1);
+        finale.Count(s => s.BracketRunde == "Finale").Should().Be(1);
+        finale.Count(s => s.BracketRunde == "Spiel um Platz 3").Should().Be(0);
+        finale.Should().HaveCount(2);
+    }
+
+    // ---------------------------------------------------------------------------
     // Hilfsmethoden
     // ---------------------------------------------------------------------------
+
+    /// <summary>Kleinste Zweierpotenz ≥ <paramref name="wert"/> (Spiegel der Service-Logik für Tests).</summary>
+    private static int NaechsteZweierpotenz(int wert)
+    {
+        int n = 1;
+        while (n < wert) n <<= 1;
+        return n;
+    }
+
+    /// <summary>Rundenname für eine Runde mit <paramref name="teilnehmer"/> Teilnehmern (für Tests).</summary>
+    private static string RundenNameFuer(int teilnehmer) => teilnehmer switch
+    {
+        2  => "Finale",
+        4  => "Halbfinale",
+        8  => "Viertelfinale",
+        16 => "Achtelfinale",
+        32 => "Sechzehntelfinale",
+        64 => "Zweiunddreißigstelfinale",
+        _  => $"Runde der letzten {teilnehmer}"
+    };
+
+    /// <summary>Spielt alle Finalrundenspiele durch (jeweils Team 1 gewinnt) und schaltet das Bracket weiter.</summary>
+    private void FinalrundeDurchspielen(Turnier turnier)
+    {
+        while (true)
+        {
+            var spiel = turnier.Finalrundenspiele.FirstOrDefault(s =>
+                s.Status != SpielStatus.Abgeschlossen && s.Team1Id.HasValue && s.Team2Id.HasValue);
+            if (spiel is null) break;
+
+            spiel.Status   = SpielStatus.Abgeschlossen;
+            spiel.Ergebnis = new SpielErgebnis { SiegerId = spiel.Team1Id!.Value };
+            _sut.BracketFortsetzungAktualisieren(turnier, spiel);
+        }
+    }
+
+    /// <summary>
+    /// Erstellt ein Turnier mit beliebig vielen Gruppen der angegebenen Größen, ohne Gruppenspiele.
+    /// </summary>
+    private static Turnier TurnierMitNGruppenBauen(FinalrundenModus modus, params int[] gruppenGroessen)
+    {
+        var turnier = new Turnier
+        {
+            Wertungssystem   = Wertungssystem.Einfach,
+            FinalrundenModus = modus
+        };
+
+        for (int g = 0; g < gruppenGroessen.Length; g++)
+        {
+            char buchstabe = (char)('A' + g);
+            var gruppe = new Gruppe { Name = buchstabe.ToString(), Nummer = g + 1 };
+            for (int i = 0; i < gruppenGroessen[g]; i++)
+            {
+                var id = Guid.NewGuid();
+                turnier.Teams.Add(new Team { Id = id, Name = $"{buchstabe}{i + 1}" });
+                gruppe.TeamIds.Add(id);
+            }
+            turnier.Gruppen.Add(gruppe);
+        }
+
+        return turnier;
+    }
 
     /// <summary>
     /// Erstellt ein Turnier mit zwei Gruppen und je <paramref name="aCount"/> / <paramref name="bCount"/>

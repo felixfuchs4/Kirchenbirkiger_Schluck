@@ -46,7 +46,7 @@ Ein Versuch ist ein einzelner Trinkversuch beider Spieler innerhalb eines Einzel
 
 ### Reguläre Einzelduelle
 
-Eine Partie besteht regulär aus fünf Einzelduellen, da grundsätzlich fünf Spieler je Mannschaft vorgesehen sind.
+Eine Partie besteht aus **maximal** fünf regulären Einzelduellen (Best of 5), da grundsätzlich fünf Spieler je Mannschaft vorgesehen sind. Sie endet vorzeitig, sobald ein Team einen **uneinholbaren** Vorsprung hat (siehe Abschnitt 8).
 
 ### Stechen / Overtime
 
@@ -55,6 +55,8 @@ Wenn nach den fünf regulären Einzelduellen Gleichstand herrscht, wird die Part
 ## 3. Start einer Partie
 
 Eine Partie startet mit der Auswahl oder dem Aufruf der nächsten Begegnung im Spielplan.
+
+Zu Beginn jeder Partie wird je Mannschaft die **Spielerreihenfolge ausgelost**, sodass die Duelle variieren und nicht immer derselbe Spieler beginnt. Die ausgeloste Reihenfolge bestimmt die Vorbelegung der regulären Einzelduelle; die Turnierleitung kann die Spieler eines Duells jederzeit manuell in der Bedienoberfläche ändern.
 
 Beim Start der Partie werden auf dem Anzeigebildschirm mindestens angezeigt:
 
@@ -160,27 +162,24 @@ Diese Regel ermöglicht Partiestände wie:
 
 wenn mehrere Einzelduelle mit beidseitigen Treffern enden.
 
-## 8. Regulärer Abschluss nach fünf Einzelduellen
+## 8. Abschluss im Best-of-5-Modus
 
-Eine Partie läuft regulär so lange, bis alle fünf Spieler beider Mannschaften gegeneinander angetreten sind.
+Eine Partie läuft so lange, bis sie **entschieden** ist – höchstens jedoch über fünf reguläre Einzelduelle.
 
-Nach fünf Einzelduellen wird der Gesamtpunktestand der Partie ausgewertet.
+Sie gilt als **vorzeitig entschieden**, sobald der Vorsprung eines Teams (an gewonnenen Einzelduellen) **größer** ist als die Zahl der noch möglichen regulären Duelle. Das zurückliegende Team kann den Rückstand dann rechnerisch nicht mehr aufholen; es werden keine weiteren regulären Duelle gestartet.
 
-Beispiel:
+Solange ein **Ausgleich noch möglich** ist (Vorsprung ≤ verbleibende Duelle), wird weitergespielt – so bleibt der Weg ins Stechen offen. Unentschiedene Einzelduelle (0:0 oder 1:1) verändern den Vorsprung nicht.
 
-```text
-Team 1     3 : 2     Team 2
-```
-
-In diesem Fall gewinnt Team 1 die Partie.
-
-Beispiel:
+Beispiele:
 
 ```text
-Team 1     3 : 3     Team 2
+Team 1     3 : 0     Team 2   (nach 3 Duellen)  → entschieden, Team 1 gewinnt (max. 3:2 möglich)
+Team 1     2 : 1     Team 2   (nach 3 Duellen)  → wird weitergespielt (Ausgleich möglich)
+Team 1     3 : 2     Team 2   (nach 5 Duellen)  → entschieden, Team 1 gewinnt
+Team 1     3 : 3     Team 2   (nach 5 Duellen)  → nicht entschieden, geht ins Stechen
 ```
 
-In diesem Fall ist die Partie nach der regulären Anzahl an Einzelduellen nicht entschieden und geht in das Stechen.
+Die Turnierleitung schließt die entschiedene Partie über die Bedienoberfläche ab (der Button „Spiel abschließen" wird freigeschaltet, weitere reguläre Duelle werden gesperrt).
 
 ## 9. Stechen / Overtime
 

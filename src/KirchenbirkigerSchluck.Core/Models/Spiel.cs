@@ -98,6 +98,18 @@ public class Spiel
     public List<Einzelduell> Einzelduelle { get; set; } = [];
 
     /// <summary>
+    /// Zu Spielbeginn ausgeloste Spielerreihenfolge von Team 1 (Spieler-Ids in Antrittsreihenfolge).
+    /// Leer, solange noch nicht ausgelost; bestimmt die Vorbelegung der regulären Duelle.
+    /// </summary>
+    public List<Guid> Spieler1Reihenfolge { get; set; } = [];
+
+    /// <summary>
+    /// Zu Spielbeginn ausgeloste Spielerreihenfolge von Team 2 (Spieler-Ids in Antrittsreihenfolge).
+    /// Leer, solange noch nicht ausgelost; bestimmt die Vorbelegung der regulären Duelle.
+    /// </summary>
+    public List<Guid> Spieler2Reihenfolge { get; set; } = [];
+
+    /// <summary>
     /// Abschlussergebnis der Partie. Null solange die Partie noch läuft.
     /// </summary>
     public SpielErgebnis? Ergebnis { get; set; }

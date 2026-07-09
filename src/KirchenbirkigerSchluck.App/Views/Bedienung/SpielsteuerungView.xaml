@@ -78,6 +78,11 @@
                                             IsEnabled="False"
                                             HorizontalAlignment="Center"
                                             Visibility="{Binding IstStechen, Converter={StaticResource BoolToVisibility}}" />
+                        <materialDesign:Chip Content="ENTSCHIEDEN"
+                                            Background="{StaticResource PinselAkzent}" Foreground="Black"
+                                            IsEnabled="False"
+                                            HorizontalAlignment="Center"
+                                            Visibility="{Binding SpielEntschieden, Converter={StaticResource BoolToVisibility}}" />
                     </StackPanel>
                     <TextBlock Grid.Column="2"
                                Text="{Binding Team2Name}"
@@ -283,8 +288,15 @@
             <!-- ── Spiel abschließen ───────────────────────────────────── -->
             <Border Grid.Row="7" Padding="0,12,0,0">
                 <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                    <!-- Hinweis: Partie vorzeitig/regulär entschieden -->
+                    <TextBlock Text="Spiel entschieden – bitte abschließen."
+                               Foreground="{StaticResource PinselAkzent}"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"
+                               Margin="0,0,12,0"
+                               Visibility="{Binding SpielEntschieden, Converter={StaticResource BoolToVisibility}}" />
                     <!-- Hinweis warum noch nicht abgeschlossen werden kann -->
-                    <TextBlock Text="Alle 5 Duelle abschließen, dann Spiel beenden."
+                    <TextBlock Text="Duelle austragen, bis die Partie entschieden ist."
                                Foreground="{StaticResource PinselTextGedaempft}"
                                VerticalAlignment="Center"
                                Margin="0,0,12,0">

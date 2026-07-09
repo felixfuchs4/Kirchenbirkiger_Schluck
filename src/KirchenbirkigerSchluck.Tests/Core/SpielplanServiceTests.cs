@@ -184,8 +184,9 @@ public class SpielplanServiceTests
     };
 
     /// <summary>
-    /// Bei B/C-Gleichstand (gleiche Punkte, kein direkter Vergleich) wird genau ein
-    /// Platzierungs-Stechen B–C erzeugt.
+    /// A und B sind auf Punkten UND Torverhältnis gleichauf (je ein Sieg mit gleicher Duelldifferenz),
+    /// haben aber nicht direkt gegeneinander gespielt → genau ein Platzierungs-Stechen A–B.
+    /// C liegt beim gleichen Punktestand durch das Torverhältnis darüber und braucht kein Stechen.
     /// </summary>
     [Fact]
     public void PlatzierungsStechenErzeugen_BeiGleichstand_ErzeugtGenauEinStechen()
@@ -212,12 +213,12 @@ public class SpielplanServiceTests
         // Act
         var anzahl = _sut.PlatzierungsStechenErzeugen(turnier);
 
-        // Assert
+        // Assert – A und B (Torverhältnis +3, kein direktes Spiel) müssen ins Stechen
         anzahl.Should().Be(1);
         var stechen = gruppe.Spiele.Where(s => s.IstPlatzierungsStechen).ToList();
         stechen.Should().HaveCount(1);
         var teilnehmer = new[] { stechen[0].Team1Id, stechen[0].Team2Id };
-        teilnehmer.Should().BeEquivalentTo([teamB, teamC]);
+        teilnehmer.Should().BeEquivalentTo([teamA, teamB]);
 
         // Erneuter Aufruf erzeugt kein doppeltes Stechen
         _sut.PlatzierungsStechenErzeugen(turnier).Should().Be(0);

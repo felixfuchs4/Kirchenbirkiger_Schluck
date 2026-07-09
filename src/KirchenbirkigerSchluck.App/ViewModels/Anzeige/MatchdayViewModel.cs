@@ -106,8 +106,8 @@ public partial class MatchdayViewModel : ObservableObject
             else
             {
                 var idx = nr - 1;
-                var sp1 = idx < (team1?.Spieler.Count ?? 0) ? team1!.Spieler[idx].Name : $"Spieler {nr}";
-                var sp2 = idx < (team2?.Spieler.Count ?? 0) ? team2!.Spieler[idx].Name : $"Spieler {nr}";
+                var sp1 = VorschauName(team1, spiel.Spieler1Reihenfolge, idx, nr);
+                var sp2 = VorschauName(team2, spiel.Spieler2Reihenfolge, idx, nr);
                 Duelle.Add(new DuellZeileModel
                 {
                     Duellnummer   = nr,
@@ -165,6 +165,20 @@ public partial class MatchdayViewModel : ObservableObject
     }
 
     // ──── Hilfsmethoden ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Name des Spielers an Position <paramref name="index"/> gemäß ausgeloster Reihenfolge (für die
+    /// Vorschau noch nicht gestarteter Duelle); Fallback auf feste Aufstellung bzw. Platzhaltertext.
+    /// </summary>
+    private static string VorschauName(Team? team, IReadOnlyList<Guid> reihenfolge, int index, int nr)
+    {
+        if (team is not null && index < reihenfolge.Count)
+        {
+            var s = team.Spieler.FirstOrDefault(x => x.Id == reihenfolge[index]);
+            if (s is not null) return s.Name;
+        }
+        return team is not null && index < team.Spieler.Count ? team.Spieler[index].Name : $"Spieler {nr}";
+    }
 
     private static string TeamName(Turnier turnier, Guid? teamId) =>
         turnier.Teams.FirstOrDefault(t => t.Id == teamId)?.Name ?? "?";

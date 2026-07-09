@@ -45,10 +45,23 @@ public class GruppenTabellenEintrag
 
     /// <summary>
     /// Gibt an, ob für diese Position noch ein Stechen gegen ein anderes Team
-    /// gespielt werden muss, weil Tabellenpunkte und Direkter Vergleich keine
-    /// eindeutige Reihenfolge ergeben haben.
+    /// gespielt werden muss, weil Tabellenpunkte, Torverhältnis und Direkter Vergleich
+    /// keine eindeutige Reihenfolge ergeben haben.
     /// </summary>
     public bool StehenErforderlich { get; set; }
+
+    /// <summary>
+    /// Gibt an, ob die Platzierung dieses Teams (bei Gleichstand nach Punkten und Torverhältnis)
+    /// durch den <b>Direkten Vergleich</b> entschieden wurde. Kennzeichnung „DV" in der Tabelle.
+    /// </summary>
+    public bool DurchDirektenVergleich { get; set; }
+
+    /// <summary>
+    /// Gibt an, dass ein <b>Stechen</b> an der Platzierung dieses Teams beteiligt ist – entweder
+    /// bereits ausgespielt oder noch erforderlich (siehe <see cref="StehenErforderlich"/>).
+    /// Kennzeichnung „S" in der Tabelle.
+    /// </summary>
+    public bool DurchStechen { get; set; }
 }
 
 /// <summary>

@@ -78,7 +78,7 @@ public partial class TabellenViewModel : ObservableObject
                     DuelleVerloren = eintrag.DuellpunkteVerloren,
                     DuellDifferenz = diff > 0 ? $"+{diff}" : diff.ToString(),
                     Punkte = eintrag.Tabellenpunkte,
-                    StechenNoetig = eintrag.StehenErforderlich
+                    TiebreakKuerzel = TiebreakKuerzel(eintrag)
                 });
             }
 
@@ -87,6 +87,10 @@ public partial class TabellenViewModel : ObservableObject
 
         HatTabellen = Gruppen.Count > 0;
     }
+
+    /// <summary>Liefert das Tiebreak-Kürzel („DV", „S" oder leer) für einen Tabelleneintrag.</summary>
+    private static string TiebreakKuerzel(GruppenTabellenEintrag eintrag) =>
+        eintrag.DurchDirektenVergleich ? "DV" : eintrag.DurchStechen ? "S" : string.Empty;
 
     private static string TeamName(Turnier turnier, Guid teamId) =>
         turnier.Teams.FirstOrDefault(t => t.Id == teamId)?.Name ?? "?";

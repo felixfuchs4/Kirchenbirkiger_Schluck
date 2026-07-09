@@ -17,6 +17,9 @@ namespace KirchenbirkigerSchluck.Core.Services;
 /// </summary>
 public class SpielsteuerungService : ISpielsteuerungService
 {
+    /// <summary>Anzahl regulärer Einzelduelle einer Partie (Best-of-5).</summary>
+    public const int RegulaereDuelle = 5;
+
     /// <inheritdoc/>
     /// <exception cref="InvalidOperationException">Das Spiel ist nicht im Status <c>Geplant</c>.</exception>
     public void SpielStarten(Spiel spiel)
@@ -136,6 +139,53 @@ public class SpielsteuerungService : ISpielsteuerungService
         var (tp1, tp2) = new WertungsService().TabellenPunkteBerechnen(spiel, turnier.Wertungssystem);
         ergebnis.TabellenPunkteTeam1 = tp1;
         ergebnis.TabellenPunkteTeam2 = tp2;
+    }
+
+    /// <inheritdoc/>
+    public SpielFortschritt Auswerten(Spiel spiel)
+    {
+        int duellsiege1 = spiel.Einzelduelle.Count(d => d.Ergebnis?.SiegerId == spiel.Team1Id);
+        int duellsiege2 = spiel.Einzelduelle.Count(d => d.Ergebnis?.SiegerId == spiel.Team2Id);
+
+        int regulaereAbgeschlossen = spiel.Einzelduelle.Count(d => !d.IstStechen && d.Ergebnis is not null);
+        int verbleibend = Math.Max(0, RegulaereDuelle - regulaereAbgeschlossen);
+        bool duellLaeuft = spiel.Einzelduelle.Any(d => d.Ergebnis is null);
+        bool hatStechen = spiel.Einzelduelle.Any(d => d.IstStechen);
+
+        // Vorsprung an klaren Duellsiegen; Unentschieden-Duelle (1:1/0:0) verändern ihn nicht,
+        // daher kann ein zurückliegendes Team pro verbleibendem Duell höchstens 1 aufholen.
+        int vorsprung = Math.Abs(duellsiege1 - duellsiege2);
+
+        // Regulär uneinholbar entschieden: Vorsprung größer als die noch möglichen Duelle.
+        // Deckt auch den regulären Abschluss nach fünf Duellen ab (verbleibend = 0, Vorsprung > 0).
+        bool regulaerEntschieden = !duellLaeuft && !hatStechen && vorsprung > verbleibend;
+
+        // Stechen nötig: bereits im Stechen oder Gleichstand nach allen fünf regulären Duellen.
+        bool stechenNoetig = hatStechen || (regulaereAbgeschlossen >= RegulaereDuelle && vorsprung == 0);
+
+        // Stechen entschieden: das zuletzt abgeschlossene Stechen-Duell hat einen klaren Sieger.
+        var letztesStechen = spiel.Einzelduelle
+            .Where(d => d.IstStechen && d.Ergebnis is not null)
+            .OrderBy(d => d.Duellnummer)
+            .LastOrDefault();
+        bool stechenEntschieden = !duellLaeuft && letztesStechen?.Ergebnis?.SiegerId is not null;
+
+        bool kannAbschliessen = regulaerEntschieden || stechenEntschieden;
+
+        return new SpielFortschritt(
+            duellsiege1, duellsiege2, regulaereAbgeschlossen, verbleibend,
+            duellLaeuft, stechenNoetig, kannAbschliessen);
+    }
+
+    /// <inheritdoc/>
+    public void SpielerReihenfolgeFestlegen(
+        Spiel spiel, IReadOnlyList<Guid> team1SpielerIds, IReadOnlyList<Guid> team2SpielerIds, Random rng)
+    {
+        if (spiel.Spieler1Reihenfolge.Count == 0)
+            spiel.Spieler1Reihenfolge = team1SpielerIds.OrderBy(_ => rng.Next()).ToList();
+
+        if (spiel.Spieler2Reihenfolge.Count == 0)
+            spiel.Spieler2Reihenfolge = team2SpielerIds.OrderBy(_ => rng.Next()).ToList();
     }
 
     /// <summary>

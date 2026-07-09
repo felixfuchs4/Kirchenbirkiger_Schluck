@@ -26,6 +26,7 @@ public partial class TurnierVerwaltungViewModel : ObservableObject
 {
     private readonly ITurnierService _turnierService;
     private readonly ISpielplanService _spielplanService;
+    private readonly ISpeicherstandService _speicherstandService;
     private readonly TurnierZustandService _turnierZustand;
     private readonly AnzeigeZustandService _anzeigeZustand;
 
@@ -33,16 +34,19 @@ public partial class TurnierVerwaltungViewModel : ObservableObject
     public TurnierVerwaltungViewModel(
         ITurnierService turnierService,
         ISpielplanService spielplanService,
+        ISpeicherstandService speicherstandService,
         TurnierZustandService turnierZustandService,
         AnzeigeZustandService anzeigeZustandService)
     {
         _turnierService  = turnierService;
         _spielplanService = spielplanService;
+        _speicherstandService = speicherstandService;
         _turnierZustand  = turnierZustandService;
         _anzeigeZustand  = anzeigeZustandService;
 
         turnierZustandService.TurnierGeaendert += (_, _) => TurnierInfoAktualisieren();
         TurnierInfoAktualisieren();
+        SpeicherstaendeAktualisieren();
         NeuesTournierDatum = DateTime.Today;
     }
 
@@ -212,6 +216,132 @@ public partial class TurnierVerwaltungViewModel : ObservableObject
     }
 
     private bool KannSpeichern() => HatGeladenesTurnier;
+
+    // ──── Speicherstände (benannt + automatische Backups) ────────────────────
+
+    /// <summary>Titel für einen neuen benannten Speicherstand (Pflicht für „Speichern unter").</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SpeichernUnterCommand))]
+    private string _speicherstandTitel = string.Empty;
+
+    /// <summary>Optionale Kurzbeschreibung zur besseren Auffindbarkeit.</summary>
+    [ObservableProperty]
+    private string _speicherstandBeschreibung = string.Empty;
+
+    /// <summary>Alle ladbaren Speicherstände (benannte Stände und automatische Backups).</summary>
+    public ObservableCollection<SpeicherstandInfo> Speicherstaende { get; } = [];
+
+    /// <summary>Aktuell in der Liste ausgewählter Speicherstand.</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SpeicherstandLadenCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SpeicherstandLoeschenCommand))]
+    private SpeicherstandInfo? _ausgewaehlterSpeicherstand;
+
+    /// <summary>Speichert den aktuellen Turnierstand unter dem eingegebenen Titel (mit optionaler Beschreibung).</summary>
+    [RelayCommand(CanExecute = nameof(KannSpeichernUnter))]
+    private void SpeichernUnter()
+    {
+        var turnier = _turnierZustand.AktuellesTurnier;
+        if (turnier is null) return;
+
+        var titel = SpeicherstandTitel.Trim();
+
+        // Vorhandenen benannten Stand gleichen Titels? → Überschreiben bestätigen
+        bool existiert = Speicherstaende.Any(s =>
+            s.Typ == SpeicherstandTyp.Benannt &&
+            string.Equals(s.Titel, titel, StringComparison.OrdinalIgnoreCase));
+        if (existiert)
+        {
+            var frage = MessageBox.Show(
+                $"Ein Speicherstand \"{titel}\" existiert bereits. Überschreiben?",
+                "Speicherstand überschreiben", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (frage != MessageBoxResult.Yes) return;
+        }
+
+        try
+        {
+            _speicherstandService.SpeichernUnter(turnier, titel, SpeicherstandBeschreibung);
+            SpeicherstandTitel = string.Empty;
+            SpeicherstandBeschreibung = string.Empty;
+            SpeicherstaendeAktualisieren();
+            MessageBox.Show("Speicherstand gespeichert.", "Gespeichert",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Speicherstand konnte nicht gespeichert werden:\n{ex.Message}",
+                "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private bool KannSpeichernUnter() =>
+        HatGeladenesTurnier && !string.IsNullOrWhiteSpace(SpeicherstandTitel);
+
+    /// <summary>Lädt den ausgewählten Speicherstand und ersetzt damit den aktuellen Arbeitsstand.</summary>
+    [RelayCommand(CanExecute = nameof(KannAusgewaehltenSpeicherstand))]
+    private void SpeicherstandLaden()
+    {
+        var info = AusgewaehlterSpeicherstand;
+        if (info is null) return;
+
+        var frage = MessageBox.Show(
+            $"Speicherstand laden?\n\n{info.Titel} ({info.GespeichertAm:dd.MM.yyyy HH:mm})\n\n" +
+            "Der aktuelle Arbeitsstand wird ersetzt.",
+            "Speicherstand laden", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (frage != MessageBoxResult.Yes) return;
+
+        try
+        {
+            var turnier = _speicherstandService.Laden(info);
+            _turnierZustand.TurnierSetzen(turnier);
+            _turnierService.TurnierSpeichern(turnier); // als Arbeitsstand übernehmen
+            MessageBox.Show(
+                $"Geladen: {turnier.Anlass} ({turnier.Datum:dd.MM.yyyy})",
+                "Speicherstand geladen", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Speicherstand konnte nicht geladen werden:\n{ex.Message}",
+                "Fehler", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    /// <summary>Löscht die Datei des ausgewählten Speicherstands (nach Bestätigung).</summary>
+    [RelayCommand(CanExecute = nameof(KannAusgewaehltenSpeicherstand))]
+    private void SpeicherstandLoeschen()
+    {
+        var info = AusgewaehlterSpeicherstand;
+        if (info is null) return;
+
+        var frage = MessageBox.Show(
+            $"Speicherstand \"{info.Titel}\" ({info.GespeichertAm:dd.MM.yyyy HH:mm}) wirklich löschen?",
+            "Speicherstand löschen", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (frage != MessageBoxResult.Yes) return;
+
+        try
+        {
+            _speicherstandService.Loeschen(info);
+            SpeicherstaendeAktualisieren();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Speicherstand konnte nicht gelöscht werden:\n{ex.Message}",
+                "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private bool KannAusgewaehltenSpeicherstand() => AusgewaehlterSpeicherstand is not null;
+
+    /// <summary>Lädt die Liste der Speicherstände neu aus dem Dateisystem.</summary>
+    [RelayCommand]
+    private void SpeicherstaendeAktualisieren()
+    {
+        var vorherPfad = AusgewaehlterSpeicherstand?.Pfad;
+        Speicherstaende.Clear();
+        foreach (var info in _speicherstandService.Alle())
+            Speicherstaende.Add(info);
+        AusgewaehlterSpeicherstand = Speicherstaende.FirstOrDefault(s => s.Pfad == vorherPfad);
+    }
 
     /// <summary>
     /// Wechselt den Turnierstatus zum nächsten Schritt.

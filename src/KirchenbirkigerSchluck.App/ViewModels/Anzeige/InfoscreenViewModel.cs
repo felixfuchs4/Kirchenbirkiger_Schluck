@@ -361,7 +361,8 @@ public partial class InfoscreenViewModel : ObservableObject
                         DuelleVerloren = eintrag.DuellpunkteVerloren,
                         DuellDifferenz = diff > 0 ? $"+{diff}" : diff.ToString(),
                         Punkte = eintrag.Tabellenpunkte,
-                        StechenNoetig = eintrag.StehenErforderlich
+                        TiebreakKuerzel = eintrag.DurchDirektenVergleich ? "DV"
+                                        : eintrag.DurchStechen ? "S" : string.Empty
                     });
                 }
                 break;

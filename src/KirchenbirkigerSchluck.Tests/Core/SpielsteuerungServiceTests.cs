@@ -226,4 +226,150 @@ public class SpielsteuerungServiceTests
         spiel.Ergebnis.DuellpunkteTeam1.Should().Be(3);
         spiel.Ergebnis.DuellpunkteTeam2.Should().Be(2);
     }
+
+    // ──────────────────────────────────────────────────────────
+    // Auswerten – Best-of-5
+    // ──────────────────────────────────────────────────────────
+
+    /// <summary>Fügt dem Spiel ein reguläres Unentschieden-Duell hinzu (3 gleiche Versuche).</summary>
+    private void RegulaeresUnentschieden(Spiel spiel, bool beideTreffen)
+    {
+        _sut.NaechesDuellStarten(spiel, Guid.NewGuid(), Guid.NewGuid());
+        _sut.VersuchErfassen(spiel, beideTreffen, beideTreffen);
+        while (spiel.Einzelduelle.Last().Ergebnis is null)
+            _sut.VersuchErfassen(spiel, beideTreffen, beideTreffen);
+    }
+
+    /// <summary>Fügt ein Stechen-Duell mit dem angegebenen (wiederholten) Versuchsausgang hinzu.</summary>
+    private void StechenDuell(Spiel spiel, bool team1Trifft, bool team2Trifft)
+    {
+        _sut.StechenStarten(spiel, Guid.NewGuid(), Guid.NewGuid());
+        _sut.VersuchErfassen(spiel, team1Trifft, team2Trifft);
+        while (spiel.Einzelduelle.Last().Ergebnis is null)
+            _sut.VersuchErfassen(spiel, team1Trifft, team2Trifft);
+    }
+
+    /// <summary>3:0 nach drei Duellen → uneinholbar, Partie kann vorzeitig abgeschlossen werden.</summary>
+    [Fact]
+    public void Auswerten_UneinholbarerVorsprung_KannVorzeitigAbschliessen()
+    {
+        var spiel = SpielMitDuellenBauen(siege1: 3, siege2: 0);
+
+        var f = _sut.Auswerten(spiel);
+
+        f.KannAbschliessen.Should().BeTrue();
+        f.StechenNoetig.Should().BeFalse();
+        f.Verbleibend.Should().Be(2);
+        f.RegulaereAbgeschlossen.Should().Be(3);
+    }
+
+    /// <summary>2:1 nach drei Duellen → Ausgleich noch möglich, es wird weitergespielt.</summary>
+    [Fact]
+    public void Auswerten_AusgleichMoeglich_KannNichtAbschliessen()
+    {
+        var spiel = SpielMitDuellenBauen(siege1: 2, siege2: 1);
+
+        var f = _sut.Auswerten(spiel);
+
+        f.KannAbschliessen.Should().BeFalse();
+        f.StechenNoetig.Should().BeFalse();
+    }
+
+    /// <summary>3:1 nach vier Duellen (Vorsprung 2 &gt; 1 verbleibendes) → entschieden.</summary>
+    [Fact]
+    public void Auswerten_Grenzfall_DreiZuEinsNachVier_KannAbschliessen()
+    {
+        var spiel = SpielMitDuellenBauen(siege1: 3, siege2: 1);
+
+        _sut.Auswerten(spiel).KannAbschliessen.Should().BeTrue();
+    }
+
+    /// <summary>Unentschieden-Duelle verändern den Vorsprung nicht (2:0 + Unentschieden bleibt aufholbar).</summary>
+    [Fact]
+    public void Auswerten_UnentschiedenAendertVorsprungNicht()
+    {
+        var spiel = SpielMitDuellenBauen(siege1: 2, siege2: 0);
+        RegulaeresUnentschieden(spiel, beideTreffen: true); // 1:1-Duell, drittes reguläres Duell
+
+        var f = _sut.Auswerten(spiel);
+
+        f.DuellsiegeTeam1.Should().Be(2);
+        f.DuellsiegeTeam2.Should().Be(0);
+        f.RegulaereAbgeschlossen.Should().Be(3);
+        f.Verbleibend.Should().Be(2);
+        f.KannAbschliessen.Should().BeFalse("Vorsprung 2 ist bei 2 verbleibenden Duellen noch einholbar");
+    }
+
+    /// <summary>2:2 nach fünf regulären Duellen (inkl. Unentschieden) → Stechen nötig, nicht abschließbar.</summary>
+    [Fact]
+    public void Auswerten_GleichstandNachFuenf_StechenNoetig()
+    {
+        var spiel = SpielMitDuellenBauen(siege1: 2, siege2: 2);
+        RegulaeresUnentschieden(spiel, beideTreffen: false); // fünftes reguläres Duell 0:0
+
+        var f = _sut.Auswerten(spiel);
+
+        f.RegulaereAbgeschlossen.Should().Be(5);
+        f.Verbleibend.Should().Be(0);
+        f.StechenNoetig.Should().BeTrue();
+        f.KannAbschliessen.Should().BeFalse();
+    }
+
+    /// <summary>Unentschiedenes Stechen-Duell entscheidet die Partie noch nicht.</summary>
+    [Fact]
+    public void Auswerten_StechenUnentschieden_KannNichtAbschliessen()
+    {
+        var spiel = SpielMitDuellenBauen(siege1: 2, siege2: 2);
+        RegulaeresUnentschieden(spiel, beideTreffen: false); // 5. Duell → Gleichstand
+        StechenDuell(spiel, team1Trifft: true, team2Trifft: true); // Stechen 1:1
+
+        var f = _sut.Auswerten(spiel);
+
+        f.StechenNoetig.Should().BeTrue();
+        f.KannAbschliessen.Should().BeFalse("ein unentschiedenes Stechen-Duell entscheidet nichts");
+    }
+
+    /// <summary>Stechen-Duell mit klarem Sieger → Partie kann abgeschlossen werden.</summary>
+    [Fact]
+    public void Auswerten_StechenKlarerSieger_KannAbschliessen()
+    {
+        var spiel = SpielMitDuellenBauen(siege1: 2, siege2: 2);
+        RegulaeresUnentschieden(spiel, beideTreffen: false); // 5. Duell → Gleichstand
+        StechenDuell(spiel, team1Trifft: true, team2Trifft: false); // Stechen für Team 1
+
+        _sut.Auswerten(spiel).KannAbschliessen.Should().BeTrue();
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // SpielerReihenfolgeFestlegen
+    // ──────────────────────────────────────────────────────────
+
+    /// <summary>Legt für beide Teams eine Reihenfolge fest, die eine Permutation der Spieler ist.</summary>
+    [Fact]
+    public void SpielerReihenfolgeFestlegen_ErzeugtPermutationJeTeam()
+    {
+        var spiel = new Spiel();
+        var team1 = Enumerable.Range(0, 5).Select(_ => Guid.NewGuid()).ToList();
+        var team2 = Enumerable.Range(0, 5).Select(_ => Guid.NewGuid()).ToList();
+
+        _sut.SpielerReihenfolgeFestlegen(spiel, team1, team2, new Random(42));
+
+        spiel.Spieler1Reihenfolge.Should().BeEquivalentTo(team1);
+        spiel.Spieler2Reihenfolge.Should().BeEquivalentTo(team2);
+    }
+
+    /// <summary>Eine bereits gesetzte Reihenfolge wird nicht überschrieben (idempotent).</summary>
+    [Fact]
+    public void SpielerReihenfolgeFestlegen_IstIdempotent()
+    {
+        var bestehend = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+        var spiel = new Spiel { Spieler1Reihenfolge = [.. bestehend] };
+        var team1 = Enumerable.Range(0, 5).Select(_ => Guid.NewGuid()).ToList();
+        var team2 = Enumerable.Range(0, 5).Select(_ => Guid.NewGuid()).ToList();
+
+        _sut.SpielerReihenfolgeFestlegen(spiel, team1, team2, new Random(1));
+
+        spiel.Spieler1Reihenfolge.Should().Equal(bestehend);          // unverändert
+        spiel.Spieler2Reihenfolge.Should().BeEquivalentTo(team2);     // neu gesetzt
+    }
 }

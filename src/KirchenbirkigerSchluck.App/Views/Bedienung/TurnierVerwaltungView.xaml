@@ -48,8 +48,12 @@
                     <ComboBox materialDesign:HintAssist.Hint="Finalrunden-Modus"
                               ItemsSource="{Binding AlleFinalrundenModi}"
                               SelectedItem="{Binding GewaehlterFinalrundenModus}"
-                              Margin="0,0,0,12"
+                              Margin="0,0,0,4"
                               Style="{StaticResource MaterialDesignOutlinedComboBox}" />
+                    <TextBlock Text="Die kurze Finalrunde gilt nur für genau zwei Gruppen. Bei einer, drei oder vier Gruppen wird stets ein K.-o.-Baum erzeugt."
+                               Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                               Foreground="{StaticResource PinselTextGedaempft}"
+                               TextWrapping="Wrap" Margin="0,0,0,12" />
 
                     <ComboBox materialDesign:HintAssist.Hint="Torschützenkönig-Wertung"
                               ItemsSource="{Binding AlleTorschuetzenWertungen}"
@@ -68,19 +72,81 @@
                 </StackPanel>
             </materialDesign:Card>
 
-            <!-- Laden / Speichern -->
+            <!-- Speicherstände: benannt speichern, laden, löschen -->
             <materialDesign:Card Grid.Column="0" Grid.Row="2" Padding="16">
                 <StackPanel>
-                    <TextBlock Text="Turnier laden / speichern"
+                    <TextBlock Text="Speicherstände"
                                Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                               Margin="0,0,0,16" />
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                               Margin="0,0,0,4" />
+                    <TextBlock Text="Ein Speicherstand sichert den kompletten Turnierstand (Teams, Spieler, Gruppen, Spielplan, Ergebnisse)."
+                               Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                               Foreground="{StaticResource PinselTextGedaempft}"
+                               TextWrapping="Wrap" Margin="0,0,0,12" />
+
+                    <!-- Schnellspeichern des Arbeitsstands -->
+                    <Button Content="Arbeitsstand jetzt speichern"
+                            Command="{Binding TurnierSpeichernCommand}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            HorizontalAlignment="Left" Margin="0,0,0,16" />
+
+                    <!-- Speichern unter (Titel + optionale Beschreibung) -->
+                    <TextBox materialDesign:HintAssist.Hint="Titel des Speicherstands"
+                             Text="{Binding SpeicherstandTitel, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,0,8"
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+                    <TextBox materialDesign:HintAssist.Hint="Kurzbeschreibung (optional)"
+                             Text="{Binding SpeicherstandBeschreibung, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,0,8"
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+                    <Button Content="Speichern unter"
+                            Command="{Binding SpeichernUnterCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            HorizontalAlignment="Left" Margin="0,0,0,16" />
+
+                    <!-- Liste vorhandener Speicherstände (benannt + automatische Backups) -->
+                    <DockPanel Margin="0,0,0,6">
+                        <Button DockPanel.Dock="Right"
+                                Command="{Binding SpeicherstaendeAktualisierenCommand}"
+                                Style="{StaticResource MaterialDesignIconButton}"
+                                Width="28" Height="28" Padding="0" ToolTip="Liste aktualisieren">
+                            <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18" />
+                        </Button>
+                        <TextBlock Text="Vorhandene Speicherstände"
+                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                   VerticalAlignment="Center" />
+                    </DockPanel>
+
+                    <ListBox ItemsSource="{Binding Speicherstaende}"
+                             SelectedItem="{Binding AusgewaehlterSpeicherstand}"
+                             MaxHeight="240"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             Margin="0,0,0,8">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,2">
+                                    <TextBlock Text="{Binding Titel}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding Beschreibung}"
+                                               Foreground="{StaticResource PinselTextGedaempft}"
+                                               TextWrapping="Wrap" FontSize="12" />
+                                    <TextBlock FontSize="11" Foreground="{StaticResource PinselTextGedaempft}">
+                                        <Run Text="{Binding Typ, Mode=OneWay}" />
+                                        <Run Text=" · " />
+                                        <Run Text="{Binding GespeichertAm, Mode=OneWay, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" />
+                                        <Run Text=" · " />
+                                        <Run Text="{Binding Status, Mode=OneWay}" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <StackPanel Orientation="Horizontal">
                         <Button Content="Laden"
-                                Command="{Binding TurnierLadenCommand}"
-                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                Command="{Binding SpeicherstandLadenCommand}"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
                                 Margin="0,0,8,0" />
-                        <Button Content="Speichern"
-                                Command="{Binding TurnierSpeichernCommand}"
+                        <Button Content="Löschen"
+                                Command="{Binding SpeicherstandLoeschenCommand}"
                                 Style="{StaticResource MaterialDesignOutlinedButton}" />
                     </StackPanel>
                 </StackPanel>

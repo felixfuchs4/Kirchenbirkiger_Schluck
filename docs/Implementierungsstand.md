@@ -1,10 +1,64 @@
 # Implementierungsstand – Kirchenbirkiger Schluck
 
-> **Stand:** 2026-07-02 | Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 56/56 grün | UI-Redesign: einheitliches Token-Designsystem, dunkles Bedien-Theme, Broadcast-Look der Anzeige
+> **Stand:** 2026-07-09 | Build: ✅ 0 Fehler, 0 Warnungen | Tests: ✅ 103/103 grün | UI-Redesign: einheitliches Token-Designsystem, dunkles Bedien-Theme, Broadcast-Look der Anzeige
 
 ---
 
 ## Abgeschlossene Schritte ✅
+
+### Schritt AF – Gruppen-Tiebreaker: Torverhältnis + DV/S-Kennzeichnung ✅ *(abgeschlossen, 2026-07-09)*
+
+| Bereich | Änderung |
+|---|---|
+| **Tiebreak-Reihenfolge** | Neue Sortierung bei Punktgleichstand: Tabellenpunkte → **Torverhältnis** (Duelldifferenz) → Direkter Vergleich → Stechen. Bisher fehlte das Torverhältnis komplett |
+| **WertungsService** | Primärsortierung um `ThenByDescending(Torverhältnis)` erweitert; `GleichstandAufloesen` gruppiert nun nach (Punkte, Torverhältnis) und setzt je Team `DurchDirektenVergleich` bzw. `DurchStechen`; `StehenErforderlich` behält seine Bedeutung (Stechen noch auszuspielen, nur bei vollständiger Gruppe) |
+| **SpielplanService** | `PlatzierungsStechenErzeugen` gruppiert Stechen-pflichtige Teams jetzt nach (Punkte, Torverhältnis), damit getrennte Gleichstände gleicher Punktzahl nicht vermischt werden |
+| **Anzeige** | `GruppenTabellenEintragAnzeigeModel.StechenNoetig` ersetzt durch `TiebreakKuerzel`/`HatTiebreak`. Bedien-Tabelle **und** Beamer-Infoscreen zeigen das kompakte Kürzel „DV"/„S" neben der Platzierung (statt des bisherigen „STECHEN"-Wortes); „DV" in Akzentfarbe, „S" in Stechen-Farbe |
+| **Tests** | `WertungsServiceTests` um Fälle für Torverhältnis, Direkten Vergleich, Stechen-erforderlich und gespieltes Stechen erweitert (bestehende Tiebreak-Tests an neue Reihenfolge angepasst); `SpielplanServiceTests`-Stechen-Fall aktualisiert → 103/103 |
+| **Doku** | `docs/02_Fachkonzept/Wertungslogik.md` (Tiebreaker-Reihenfolge + DV/S-Kennzeichnung) gefüllt |
+
+### Schritt AE – Benannte Speicherstände (Speichern unter / Laden mit Auswahl) ✅ *(abgeschlossen, 2026-07-09)*
+
+| Bereich | Änderung |
+|---|---|
+| **Problem** | Speichern erlaubte keinen eigenen Namen, und beim Laden gab es keine Auswahl – es existierte nur die feste `turnier.json` (Autospeichern/-laden) + stille Backups |
+| **Speicherstand-Modell** | Neuer Wrapper `Speicherstand` (Titel, optionale Beschreibung, Zeitpunkt + vollständiges `Turnier`) sowie `SpeicherstandInfo` (Metadaten für die Liste) und Enum `SpeicherstandTyp` (Benannt/Backup). Ein Speicherstand enthält den **kompletten** Stand (Teams, Spieler, Gruppen, Spielplan, Ergebnisse; Tabellen werden daraus berechnet) |
+| **SpeicherstandService (Data)** | `SpeichernUnter(turnier, titel, beschreibung)` schreibt einen benannten Stand ins neue Verzeichnis `speicherstaende/` (atomar, Titel = Dateiname, Überschreiben bei gleichem Titel). `Alle()` listet benannte Stände **und** die automatischen Backups (Metadaten via `JsonDocument`, sortiert nach Zeit). `Laden(info)`/`Loeschen(info)`. Über `ISpeicherstandService` im DI registriert |
+| **Bedienoberfläche** | Karte „Speicherstände" im Turnierverwaltungs-Tab: Schnellspeichern des Arbeitsstands, „Speichern unter" mit Titel- und Beschreibungsfeld, Auswahlliste aller Stände (Titel, Beschreibung, Typ · Datum · Status) mit „Laden" und „Löschen" + Aktualisieren. Laden ersetzt den Arbeitsstand (mit Bestätigung); Autospeichern/-laden bleibt unverändert |
+| **Tests** | +5 in `SpeicherstandServiceTests`: Roundtrip (voller Turnierstand), Überschreiben bei gleichem Titel, leerer Titel abgelehnt, Backups in der Liste + ladbar, Löschen → 101/101 |
+
+### Schritt AD – Best-of-5-Duelle & Auslosung der Spielerreihenfolge ✅ *(abgeschlossen, 2026-07-09)*
+
+| Bereich | Änderung |
+|---|---|
+| **Best-of-5** | Eine Partie endet vorzeitig, sobald ein Team uneinholbar führt (Vorsprung > verbleibende reguläre Duelle), statt starr alle fünf Duelle zu spielen. Solange ein Ausgleich möglich ist, wird weitergespielt (Weg ins Stechen bleibt offen); Unentschieden-Duelle (0:0/1:1) verändern den Vorsprung nicht |
+| **Core (testbar)** | Die bisher im ViewModel hartcodierte „5"-Ablauflogik liegt jetzt zentral in `SpielsteuerungService.Auswerten(Spiel)` → `SpielFortschritt` (Duellsiege, verbleibend, Stechen nötig, kann abschließen); Konstante `RegulaereDuelle = 5`. Zusätzlich korrigiert: das Stechen gilt erst mit **klarem Sieger** als entschieden (vorher war schon ein unentschiedenes Stechen-Duell abschließbar) |
+| **Spielerreihenfolge** | Neue Felder `Spiel.Spieler1Reihenfolge`/`Spieler2Reihenfolge`; `SpielsteuerungService.SpielerReihenfolgeFestlegen(...)` lost je Team zu Spielbeginn einmalig eine Reihenfolge aus (idempotent, persistiert). Vorschlag/Vorschau in Bedien- und Anzeige-Screen nutzen die Reihenfolge statt fester `Spieler[idx]`. **Manuelles Ändern** der Spieler im Duell-Bildschirm bleibt unverändert möglich |
+| **UI** | Score-Header zeigt Chip „ENTSCHIEDEN"; Abschluss-Bereich zeigt „Spiel entschieden – bitte abschließen"; irreführender Hinweis „Alle 5 Duelle …" entfernt |
+| **Tests** | +9 in `SpielsteuerungServiceTests`: vorzeitige Entscheidung (3:0/3), Weiterspielen (2:1/3), Grenzfall (3:1/4), Unentschieden ändert Vorsprung nicht, Gleichstand→Stechen, Stechen erst bei klarem Sieger entschieden, Reihenfolge-Auslosung (Permutation + idempotent) → 96/96 |
+| **Doku** | `docs/02_Fachkonzept/Spielablauf.md`: Abschnitt 8 auf Best-of-5 umgestellt, Auslosung der Spielerreihenfolge ergänzt |
+
+### Schritt AC – KO-Phase vereinheitlicht: generischer Baum für alle Gruppenanzahlen + Gruppendurchmischung ✅ *(abgeschlossen, 2026-07-08)*
+
+| Bereich | Änderung |
+|---|---|
+| **Fehlerbild** | `FinalrundeGenerieren` las fest nur `Gruppen[0]`/`Gruppen[1]` und der alte `GenerierenKoBaum` war auf genau zwei Gruppen (à ~6 Teams) hart verdrahtet. Bei 3/4 Gruppen fielen Gruppe C/D aus dem Bracket und es entstanden tote Slots (`TeamXId == null` **und** `VorgaengerSpielXId == null`) → Team ohne Gegner, Turnier blockiert; bei 1 Gruppe Exception. Auch 2×3 und ungerade/ungleiche 2-Gruppen-Größen (z. B. 5+4) waren im alten Pfad fehlerhaft |
+| **Vereinheitlichung** | `FinalrundeGenerieren` nutzt jetzt für **jede** Gruppenanzahl den einen generischen Builder `GenerierenKoBaumGenerisch`; der alte 2-Gruppen-Sonderbaum wurde entfernt. Einzige Ausnahme: der **Kurz-Modus** bleibt 2-Gruppen-exklusiv (`GenerierenKurz`). Neue Überladung `FinalrundeGenerieren(Turnier, Random)` für deterministische Tests |
+| **Generischer KO-Baum** | Alle Teams ziehen ein; Setzung ebenenweise nach Gruppenplatzierung. Bracketgröße = kleinste Zweierpotenz ≥ Teamzahl; Freilose nur bei Bedarf, stets an die Bestplatzierten. Rundennamen dynamisch (Finale/Halbfinale/Viertelfinale/Achtelfinale/…); Spiel um Platz 3 nur bei zwei echten Halbfinals. Keine toten Slots; `BracketFortsetzungAktualisieren` unverändert |
+| **Gruppendurchmischung** | Neue Setzung mischt die Gruppen: über Zufalls-Restarts wird die Belegung mit den geringsten „Trennungskosten“ gewählt (`BesteBelegungFinden`/`TrennungsKosten`/`BegegnungsEbene`), sodass Teams derselben Gruppe möglichst spät aufeinandertreffen. Permutiert wird nur innerhalb einer Platzierungs-Ebene → Freilos-Vergabe an die Bestplatzierten bleibt erhalten |
+| **UI** | Hinweistext am Finalrunden-Modus: die kurze Finalrunde gilt nur für zwei Gruppen; sonst wird stets ein KO-Baum erzeugt |
+| **Tests** | +12 Theorie-Fälle in `FinalrundeTests` (1–4 Gruppen, inkl. 2×3, 2×4, 5+4, gleiche/ungleiche Größen): lückenloses Bracket ohne tote Slots, alle Teams genau einmal Startteilnehmer, vollständige Durchspielbarkeit, Freilose an Bestplatzierte, Spielanzahl = Teams−1 (+ Platz 3) sowie Gruppendurchmischung (keine Erste-Runde-Begegnung gleicher Gruppe über 20 Auslosungen). Bestehende 2-Gruppen-Tests laufen jetzt über den generischen Pfad → 87/87 |
+| **Doku** | `docs/02_Fachkonzept/Finalrunde_und_Platzierungsspiele.md` auf einheitlichen Baum + Gruppendurchmischung aktualisiert |
+
+### Schritt AB – Torschützen-Rangliste: geteilte Plätze & Stechen um Platz 1 ✅ *(abgeschlossen, 2026-07-08)*
+
+| Bereich | Änderung |
+|---|---|
+| **StatistikService** | `TorschuetzenRangliste` vergibt jetzt geteilte Plätze bei exaktem Gleichstand im gewählten Wertungskriterium (Treffer bzw. Trefferquote per Bruchvergleich, keine Fließkomma-Rundungsfehler). Nur Platz 1 erfordert bei Gleichstand ein Stechen; alle anderen Plätze werden einfach geteilt (Standard-Sportranking, z. B. 1,2,2,4). Neue Methoden `GleichstandPlatz1` (liefert die gleichauf liegenden Spieler) und `StechenPlatz1Offen` (ob noch ein Sieger fehlt) |
+| **Turnier** | Neues Feld `TorschuetzenStechenSiegerId` (nullable) speichert den manuell bestimmten Stechen-Sieger; wird ungültig (ignoriert), sobald sich die Gleichstandsgruppe ändert (z. B. durch Ergebniskorrektur) |
+| **SiegerehrungViewModel (Bedienung)** | Neuer Bereich „Stechen um Platz 1 erforderlich": zeigt die gleichauf liegenden Spieler zur Auswahl, Turnierleitung führt das Stechen live durch und bestätigt den Sieger per Klick. Wechsel der Wertungsart (Absolut/Prozentual) setzt einen hinterlegten Stechen-Sieger zurück, da sich die Gleichstandsgruppe ändern kann |
+| **GewinnerViewModel/-View (Anzeige)** | Spieler-Phase der Ehrung wird jetzt nach Platz gruppiert (`SiegerehrungSchritt.Spieler`, analog zur bestehenden Team-Gruppierung): mehrere gleichauf liegende Spieler erscheinen gemeinsam auf einer Folie (`ItemsControl` + `WrapPanel`) statt künstlich getrennter Plätze |
+| **Tests** | +3 Tests in `StatistikServiceTests`: Gleichstand auf Platz 1 ohne Stechen (alle teilen sich Platz 1), mit hinterlegtem Stechen-Sieger (Sieger allein auf Platz 1, Rest teilt sich Platz 2), Gleichstand außerhalb Platz 1 (kein Stechen nötig) → 59/59 grün |
 
 ### Schritt AA – Auslieferung: Installer & feste Datenablage ✅ *(abgeschlossen, 2026-07-02)*
 

@@ -65,17 +65,27 @@
                                                     <ColumnDefinition Width="60" />
                                                     <ColumnDefinition Width="60" />
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="{Binding Platz, StringFormat='{}{0}.'}" FontWeight="Bold" Foreground="{StaticResource PinselAkzent}" VerticalAlignment="Center" />
+                                                <!-- Platz + Tiebreak-Kürzel (DV / S) darunter -->
+                                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Platz, StringFormat='{}{0}.'}" FontWeight="Bold" Foreground="{StaticResource PinselAkzent}" />
+                                                    <TextBlock Text="{Binding TiebreakKuerzel}" FontSize="10" FontWeight="Bold"
+                                                               Visibility="{Binding HatTiebreak, Converter={StaticResource BoolToVisibility}}">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{StaticResource PinselAkzent}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding TiebreakKuerzel}" Value="S">
+                                                                        <Setter Property="Foreground" Value="{StaticResource PinselStechen}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </StackPanel>
                                                 <Image Grid.Column="1" Source="{Binding LogoPfad, Converter={StaticResource PfadZuBitmap}}"
                                                        Width="26" Height="26" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"
                                                        Visibility="{Binding LogoPfad, Converter={StaticResource PfadZuVisibility}}" />
-                                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding TeamName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                                    <Border Background="{StaticResource PinselStechen}" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center"
-                                                            Visibility="{Binding StechenNoetig, Converter={StaticResource BoolToVisibility}}">
-                                                        <TextBlock Text="Stechen" Foreground="White" FontSize="10" FontWeight="Bold" />
-                                                    </Border>
-                                                </StackPanel>
+                                                <TextBlock Grid.Column="2" Text="{Binding TeamName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Grid.Column="3" Text="{Binding Spiele}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                 <TextBlock Grid.Column="4" Text="{Binding Siege}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                 <TextBlock Grid.Column="5" Text="{Binding DuellDifferenz}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource PinselTextGedaempft}" />

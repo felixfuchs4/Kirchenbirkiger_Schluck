@@ -185,18 +185,49 @@ public class WertungsServiceTests
     }
 
     /// <summary>
-    /// Vier Teams, A und C punktgleich nach zwei Spielen.
-    /// Direkter Vergleich: A hat C besiegt → C rutscht hinter A ab.
-    /// C und B bleiben ohne direkten Vergleich unentschieden → StehenErforderlich.
+    /// Drei punktgleiche Teams (Zirkel), aber unterschiedliches Torverhältnis (Duelldifferenz):
+    /// Das Torverhältnis entscheidet die Reihenfolge – kein direkter Vergleich, kein Stechen.
     /// </summary>
     [Fact]
-    public void GruppenRanglisteBerechnen_PunktgleichDirektSieg_VerliererRutschtAb()
+    public void GruppenRanglisteBerechnen_PunktgleichUnterschiedlichesTorverhaeltnis_TorverhaeltnisEntscheidet()
     {
-        // Arrange
-        // 4 Teams, Einfach-System (1 Pt. pro Sieg)
-        // Spiele: A schlägt C, B schlägt D, C schlägt D
-        // Punkte: A=1, B=1, C=1, D=0
-        // Direkter Vergleich zwischen A,B,C: A hat C (1 Sub-Pt.), B und C haben 0 Sub-Pts.
+        // Arrange – Einfach-System, Zirkel A→B→C→A, aber verschiedene Duelldifferenzen:
+        // A: +2, C: 0, B: -2 (alle 1 Punkt)
+        var teamA = Guid.NewGuid();
+        var teamB = Guid.NewGuid();
+        var teamC = Guid.NewGuid();
+
+        var gruppe = new Gruppe
+        {
+            TeamIds = [teamA, teamB, teamC],
+            Spiele =
+            [
+                AbgeschlossenesSpielBauen(teamA, teamB, teamA, EntscheidungsArt.RegulaereSpielzeit, 5, 2),
+                AbgeschlossenesSpielBauen(teamC, teamA, teamC, EntscheidungsArt.RegulaereSpielzeit, 5, 4),
+                AbgeschlossenesSpielBauen(teamB, teamC, teamB, EntscheidungsArt.RegulaereSpielzeit, 5, 4)
+            ]
+        };
+
+        // Act
+        var rangliste = _sut.GruppenRanglisteBerechnen(gruppe, Wertungssystem.Einfach);
+
+        // Assert – Reihenfolge rein nach Torverhältnis, keine Tiebreak-Markierung
+        rangliste.Single(e => e.TeamId == teamA).Position.Should().Be(1); // Torv +2
+        rangliste.Single(e => e.TeamId == teamC).Position.Should().Be(2); // Torv  0
+        rangliste.Single(e => e.TeamId == teamB).Position.Should().Be(3); // Torv -2
+        rangliste.Should().OnlyContain(e =>
+            !e.DurchDirektenVergleich && !e.DurchStechen && !e.StehenErforderlich);
+    }
+
+    /// <summary>
+    /// A und B sind auf Punkten UND Torverhältnis gleichauf; A hat B direkt besiegt → Direkter
+    /// Vergleich entscheidet (Markierung „DV"). C ist bereits durch das Torverhältnis darüber.
+    /// </summary>
+    [Fact]
+    public void GruppenRanglisteBerechnen_GleichPunkteUndTorverhaeltnis_DirekterVergleichEntscheidet()
+    {
+        // Arrange – Eishockey: A schlägt B, C schlägt A, B schlägt D
+        // Punkte je 3 für A/B/C; Torverhältnis A=0, B=0, C=+1 → C oben, A/B per DV
         var teamA = Guid.NewGuid();
         var teamB = Guid.NewGuid();
         var teamC = Guid.NewGuid();
@@ -207,42 +238,76 @@ public class WertungsServiceTests
             TeamIds = [teamA, teamB, teamC, teamD],
             Spiele =
             [
-                AbgeschlossenesSpielBauen(teamA, teamC, teamA, EntscheidungsArt.RegulaereSpielzeit, 4, 1),
-                AbgeschlossenesSpielBauen(teamB, teamD, teamB, EntscheidungsArt.RegulaereSpielzeit, 4, 1),
-                AbgeschlossenesSpielBauen(teamC, teamD, teamC, EntscheidungsArt.RegulaereSpielzeit, 4, 1)
+                AbgeschlossenesSpielBauen(teamA, teamB, teamA, EntscheidungsArt.RegulaereSpielzeit, 3, 2),
+                AbgeschlossenesSpielBauen(teamA, teamC, teamC, EntscheidungsArt.RegulaereSpielzeit, 2, 3),
+                AbgeschlossenesSpielBauen(teamB, teamD, teamB, EntscheidungsArt.RegulaereSpielzeit, 3, 2)
             ]
         };
 
         // Act
-        var rangliste = _sut.GruppenRanglisteBerechnen(gruppe, Wertungssystem.Einfach);
+        var rangliste = _sut.GruppenRanglisteBerechnen(gruppe, Wertungssystem.Eishockey);
 
-        // Assert
         var eintrA = rangliste.Single(e => e.TeamId == teamA);
+        var eintrB = rangliste.Single(e => e.TeamId == teamB);
         var eintrC = rangliste.Single(e => e.TeamId == teamC);
 
-        // A hat C direkt besiegt → A rangiert vor C
-        eintrA.Position.Should().BeLessThan(eintrC.Position);
-        // A ist durch Direkten Vergleich eindeutig platziert → kein Stechen nötig
+        // Assert – C durch Torverhältnis vorne (keine Markierung), A vor B durch Direkten Vergleich
+        eintrC.Position.Should().Be(1);
+        eintrC.DurchDirektenVergleich.Should().BeFalse();
+        eintrC.DurchStechen.Should().BeFalse();
+
+        eintrA.Position.Should().BeLessThan(eintrB.Position);
+        eintrA.DurchDirektenVergleich.Should().BeTrue();
+        eintrB.DurchDirektenVergleich.Should().BeTrue();
         eintrA.StehenErforderlich.Should().BeFalse();
-        // C ist immer noch mit B gleichgestellt → Stechen notwendig
-        eintrC.StehenErforderlich.Should().BeTrue();
+        eintrB.StehenErforderlich.Should().BeFalse();
     }
 
     /// <summary>
-    /// Wie oben (B und C gleichauf), aber ein gespieltes Platzierungs-Stechen B-&gt;C
-    /// löst den Gleichstand auf: B vor C, kein Stechen mehr nötig.
-    /// Das Stechen-Spiel selbst zählt nicht für die Tabellenpunkte.
+    /// Drei Teams gleichauf auf Punkten und Torverhältnis im Zirkel (jeder schlägt jeden einmal):
+    /// Direkter Vergleich löst nicht auf → Stechen erforderlich (Markierung „S").
     /// </summary>
     [Fact]
-    public void GruppenRanglisteBerechnen_StechenGespielt_LoestGleichstandAuf()
+    public void GruppenRanglisteBerechnen_KeinDirekterSieger_StechenErforderlich()
     {
-        // Arrange
+        // Arrange – Eishockey: A→B→C→A, alle gleiche Duelldifferenz (Torv 0), je 3 Punkte
+        var teamA = Guid.NewGuid();
+        var teamB = Guid.NewGuid();
+        var teamC = Guid.NewGuid();
+
+        var gruppe = new Gruppe
+        {
+            TeamIds = [teamA, teamB, teamC],
+            Spiele =
+            [
+                AbgeschlossenesSpielBauen(teamA, teamB, teamA, EntscheidungsArt.RegulaereSpielzeit, 3, 1),
+                AbgeschlossenesSpielBauen(teamB, teamC, teamB, EntscheidungsArt.RegulaereSpielzeit, 3, 1),
+                AbgeschlossenesSpielBauen(teamC, teamA, teamC, EntscheidungsArt.RegulaereSpielzeit, 3, 1)
+            ]
+        };
+
+        // Act
+        var rangliste = _sut.GruppenRanglisteBerechnen(gruppe, Wertungssystem.Eishockey);
+
+        // Assert – alle drei brauchen ein Stechen
+        rangliste.Should().OnlyContain(e => e.StehenErforderlich && e.DurchStechen && !e.DurchDirektenVergleich);
+    }
+
+    /// <summary>
+    /// A und B gleichauf (Punkte + Torverhältnis) ohne direktes Spiel; ein gespieltes Platzierungs-
+    /// Stechen A-&gt;B löst auf: A vor B, „S"-Markierung, kein Stechen mehr nötig.
+    /// Das Stechen zählt nicht für die Tabellenpunkte.
+    /// </summary>
+    [Fact]
+    public void GruppenRanglisteBerechnen_GespieltesStechen_LoestGleichstandAuf()
+    {
+        // Arrange – Einfach: A schlägt C, B schlägt D, C schlägt D → A,B je 1 Pt., Torv +3 (kein A-B-Spiel)
         var teamA = Guid.NewGuid();
         var teamB = Guid.NewGuid();
         var teamC = Guid.NewGuid();
         var teamD = Guid.NewGuid();
 
-        var stechen = AbgeschlossenesSpielBauen(teamB, teamC, teamB, EntscheidungsArt.RegulaereSpielzeit, 4, 1);
+        var stechen = AbgeschlossenesSpielBauen(teamA, teamB, teamA, EntscheidungsArt.RegulaereSpielzeit, 4, 1);
         stechen.IstPlatzierungsStechen = true;
 
         var gruppe = new Gruppe
@@ -260,17 +325,17 @@ public class WertungsServiceTests
         // Act
         var rangliste = _sut.GruppenRanglisteBerechnen(gruppe, Wertungssystem.Einfach);
 
-        // Assert
+        var eintrA = rangliste.Single(e => e.TeamId == teamA);
         var eintrB = rangliste.Single(e => e.TeamId == teamB);
-        var eintrC = rangliste.Single(e => e.TeamId == teamC);
 
-        // Stechen-Sieger B steht vor C
-        eintrB.Position.Should().BeLessThan(eintrC.Position);
-        // Gleichstand aufgelöst → kein Stechen mehr nötig
+        // Assert – Stechen-Sieger A vor B, per Stechen aufgelöst
+        eintrA.Position.Should().BeLessThan(eintrB.Position);
+        eintrA.DurchStechen.Should().BeTrue();
+        eintrB.DurchStechen.Should().BeTrue();
+        eintrA.StehenErforderlich.Should().BeFalse();
         eintrB.StehenErforderlich.Should().BeFalse();
-        eintrC.StehenErforderlich.Should().BeFalse();
-        // Stechen zählt nicht für die Tabellenpunkte: B und C weiterhin je 1 Punkt
+        // Stechen zählt nicht für die Tabellenpunkte
+        eintrA.Tabellenpunkte.Should().Be(1);
         eintrB.Tabellenpunkte.Should().Be(1);
-        eintrC.Tabellenpunkte.Should().Be(1);
     }
 }

@@ -89,9 +89,10 @@ public class WertungsService : IWertungsService
             }
         }
 
-        // Primärsortierung nach Tabellenpunkten (absteigend)
+        // Primärsortierung nach Tabellenpunkten, dann Torverhältnis (Duelldifferenz), je absteigend
         var sortiert = eintraege.Values
             .OrderByDescending(e => e.Tabellenpunkte)
+            .ThenByDescending(Torverhaeltnis)
             .ToList();
 
         // Ein Stechen ist erst sinnvoll, wenn alle regulären Gruppenspiele abgeschlossen sind
@@ -99,7 +100,7 @@ public class WertungsService : IWertungsService
         bool gruppeKomplett = regulaereSpiele.Count > 0
             && regulaereSpiele.All(s => s.Status is SpielStatus.Abgeschlossen or SpielStatus.Korrigiert);
 
-        // Tiebreaker: Direkter Vergleich, dann Platzierungs-Stechen
+        // Tiebreaker bei Gleichstand nach Punkten UND Torverhältnis: Direkter Vergleich, dann Stechen
         GleichstandAufloesen(sortiert, gewerteteSpiele, stechenSpiele, wertungssystem, gruppeKomplett);
 
         // Positionen 1-basiert vergeben
@@ -109,9 +110,15 @@ public class WertungsService : IWertungsService
         return sortiert.AsReadOnly();
     }
 
+    /// <summary>Torverhältnis eines Eintrags: gewonnene minus verlorene Duellpunkte.</summary>
+    private static int Torverhaeltnis(GruppenTabellenEintrag e) =>
+        e.DuellpunkteGewonnen - e.DuellpunkteVerloren;
+
     /// <summary>
-    /// Löst Gleichstände in der sortierten Rangliste per Direktem Vergleich auf.
-    /// Verbleibende Gleichstände werden mit <c>StehenErforderlich = true</c> markiert.
+    /// Löst Gleichstände nach Punkten UND Torverhältnis per Direktem Vergleich und Stechen auf und
+    /// markiert je Team, wodurch die Platzierung entschieden wurde (<c>DurchDirektenVergleich</c>,
+    /// <c>DurchStechen</c>). Noch nicht auflösbare Gleichstände werden bei vollständiger Gruppe mit
+    /// <c>StehenErforderlich = true</c> gekennzeichnet.
     /// </summary>
     private void GleichstandAufloesen(
         List<GruppenTabellenEintrag> sortiert,
@@ -120,8 +127,9 @@ public class WertungsService : IWertungsService
         Wertungssystem wertungssystem,
         bool gruppeKomplett)
     {
+        // Gleichstand nur zwischen Teams, die auf Punkten UND Torverhältnis gleichauf liegen
         var gleichstandGruppen = sortiert
-            .GroupBy(e => e.Tabellenpunkte)
+            .GroupBy(e => (e.Tabellenpunkte, Torverhaeltnis(e)))
             .Where(g => g.Count() > 1)
             .ToList();
 
@@ -129,9 +137,8 @@ public class WertungsService : IWertungsService
         {
             var gleichstandTeams = gleichstandGruppe.Select(e => e.TeamId).ToHashSet();
 
-            // Sub-Punkte aus direkten Spielen nur zwischen den gleichpunktigen Teams
+            // Sub-Punkte aus direkten Spielen nur zwischen den gleichauf liegenden Teams
             var subPunkte = gleichstandTeams.ToDictionary(id => id, _ => 0);
-
             foreach (var spiel in gewerteteSpiele.Where(s =>
                 s.Team1Id.HasValue && gleichstandTeams.Contains(s.Team1Id.Value) &&
                 s.Team2Id.HasValue && gleichstandTeams.Contains(s.Team2Id.Value)))
@@ -141,7 +148,7 @@ public class WertungsService : IWertungsService
                 subPunkte[spiel.Team2Id!.Value] += pts2;
             }
 
-            // Stechen-Siege nur zwischen den gleichpunktigen Teams zählen
+            // Stechen-Siege nur zwischen den gleichauf liegenden Teams zählen
             var stechenSiege = gleichstandTeams.ToDictionary(id => id, _ => 0);
             foreach (var spiel in stechenSpiele.Where(s =>
                 s.Team1Id.HasValue && gleichstandTeams.Contains(s.Team1Id.Value) &&
@@ -165,17 +172,32 @@ public class WertungsService : IWertungsService
                 .ThenByDescending(e => stechenSiege[e.TeamId])
                 .ToList();
 
-            // Teams, die nach beidem noch gleichauf sind, brauchen (noch) ein Stechen –
-            // aber nur, wenn die Gruppenphase vollständig gespielt ist.
-            if (gruppeKomplett)
+            // Markierung je Team: wodurch wurde die Platzierung innerhalb des Gleichstands entschieden?
+            foreach (var eintrag in neuSortiert)
             {
-                foreach (var rest in neuSortiert
-                    .GroupBy(e => (subPunkte[e.TeamId], stechenSiege[e.TeamId]))
-                    .Where(g => g.Count() > 1)
-                    .SelectMany(g => g))
+                int gleicheSub = neuSortiert.Count(e => subPunkte[e.TeamId] == subPunkte[eintrag.TeamId]);
+                if (gleicheSub == 1)
                 {
-                    rest.StehenErforderlich = true;
+                    // Eindeutig per Direktem Vergleich getrennt
+                    eintrag.DurchDirektenVergleich = true;
+                    continue;
                 }
+
+                int gleicheBeide = neuSortiert.Count(e =>
+                    subPunkte[e.TeamId] == subPunkte[eintrag.TeamId] &&
+                    stechenSiege[e.TeamId] == stechenSiege[eintrag.TeamId]);
+                if (gleicheBeide == 1)
+                {
+                    // Durch ein bereits gespieltes Stechen getrennt
+                    eintrag.DurchStechen = true;
+                }
+                else if (gruppeKomplett)
+                {
+                    // Weiterhin gleichauf und Gruppe vollständig → Stechen erforderlich
+                    eintrag.StehenErforderlich = true;
+                    eintrag.DurchStechen = true;
+                }
+                // sonst (Gruppe unvollständig): provisorisch, keine Markierung
             }
 
             // Neu sortierte Einträge an die ursprünglichen Positionen zurückschreiben

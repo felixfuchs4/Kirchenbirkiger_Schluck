@@ -107,29 +107,42 @@ public class SpielplanService : ISpielplanService
     }
 
     /// <inheritdoc/>
-    /// <exception cref="InvalidOperationException">Das Turnier hat weniger als zwei Gruppen.</exception>
-    public void FinalrundeGenerieren(Turnier turnier)
+    /// <exception cref="InvalidOperationException">Das Turnier hat keine Gruppen oder zu wenige qualifizierte Teams.</exception>
+    public void FinalrundeGenerieren(Turnier turnier) => FinalrundeGenerieren(turnier, new Random());
+
+    /// <summary>
+    /// Wie <see cref="FinalrundeGenerieren(Turnier)"/>, jedoch mit injizierbarer Zufallsquelle für
+    /// die Auslosung der Freilose (deterministische Tests). Die parameterlose Überladung verwendet
+    /// eine frische <see cref="Random"/>-Instanz.
+    /// </summary>
+    /// <param name="turnier">Das Turnier, für das die Finalrunde erzeugt wird.</param>
+    /// <param name="rng">Zufallsquelle für die ebeneninterne Auslosung.</param>
+    /// <exception cref="InvalidOperationException">Das Turnier hat keine Gruppen oder zu wenige qualifizierte Teams.</exception>
+    public void FinalrundeGenerieren(Turnier turnier, Random rng)
     {
-        if (turnier.Gruppen.Count < 2)
-            throw new InvalidOperationException(
-                "Die Finalrunde benötigt mindestens zwei Gruppen.");
-
-        var wertung = new WertungsService();
-
-        // Gruppen-Rankings als geordnete Team-Id-Listen (bester → schlechtester)
-        var a = wertung.GruppenRanglisteBerechnen(turnier.Gruppen[0], turnier.Wertungssystem)
-                       .Select(e => e.TeamId).ToList();
-        var b = wertung.GruppenRanglisteBerechnen(turnier.Gruppen[1], turnier.Wertungssystem)
-                       .Select(e => e.TeamId).ToList();
+        if (turnier.Gruppen.Count == 0)
+            throw new InvalidOperationException("Die Finalrunde benötigt mindestens eine Gruppe.");
 
         turnier.Finalrundenspiele.Clear();
 
         int nr = AlleSpiele(turnier).Select(s => s.Spielnummer).DefaultIfEmpty(0).Max() + 1;
 
-        if (turnier.FinalrundenModus == FinalrundenModus.Kurz)
+        // Die kurze Finalrunde ist ausschließlich für genau zwei Gruppen definiert.
+        if (turnier.Gruppen.Count == 2 && turnier.FinalrundenModus == FinalrundenModus.Kurz)
+        {
+            var wertung = new WertungsService();
+            var a = wertung.GruppenRanglisteBerechnen(turnier.Gruppen[0], turnier.Wertungssystem)
+                           .Select(e => e.TeamId).ToList();
+            var b = wertung.GruppenRanglisteBerechnen(turnier.Gruppen[1], turnier.Wertungssystem)
+                           .Select(e => e.TeamId).ToList();
             GenerierenKurz(turnier, a, b, ref nr);
-        else
-            GenerierenKoBaum(turnier, a, b, ref nr);
+            return;
+        }
+
+        // Alle übrigen Fälle (jede Gruppenanzahl, Modus KoBaumEin): einheitlicher generischer
+        // KO-Baum über alle Teams – lückenlos, mit Freilosen an die Bestplatzierten und
+        // gruppentrennender Setzung.
+        GenerierenKoBaumGenerisch(turnier, ref nr, rng);
     }
 
     /// <inheritdoc/>
@@ -184,91 +197,295 @@ public class SpielplanService : ISpielplanService
     }
 
     /// <summary>
-    /// KO-Turnierbaum: obere Hälfte (Gruppe A primär) und untere Hälfte (Gruppe B primär).
-    /// Generiert alle Runden sofort; Folgerunden erhalten Platzhalter (Team1Id/Team2Id = null).
+    /// Einheitlicher KO-Turnierbaum über <b>alle</b> Teams sämtlicher Gruppen (jede Gruppenanzahl).
+    /// Setzt die Teams ebenenweise (alle Gruppensieger, dann alle Zweiten, …), baut einen
+    /// Single-Elimination-Baum der nächsten Zweierpotenz auf und vergibt Freilose nur, wenn die
+    /// Teamzahl keine Zweierpotenz ist – stets an die bestplatzierten Teams. Die Zuordnung trennt
+    /// Teams derselben Gruppe so weit wie möglich (späteste mögliche Begegnung).
     /// </summary>
-    private static void GenerierenKoBaum(Turnier turnier, List<Guid> a, List<Guid> b, ref int nr)
+    /// <param name="turnier">Das Turnier, dessen Finalrunde befüllt wird.</param>
+    /// <param name="nr">Laufende Spielnummer (wird fortgeschrieben).</param>
+    /// <param name="rng">Zufallsquelle für die Auslosung.</param>
+    /// <exception cref="InvalidOperationException">Weniger als zwei qualifizierte Teams.</exception>
+    private void GenerierenKoBaumGenerisch(Turnier turnier, ref int nr, Random rng)
     {
-        // Obere Hälfte: a[0]=A1 Freilos, a[1]=A2 Freilos, a[2..3] spielen gegen B-Füller von unten
-        // Untere Hälfte: b[0]=B1 Freilos, b[1]=B2 Freilos, b[2..3] spielen gegen A-Füller von unten
+        var wertung = new WertungsService();
 
-        // B-Füller für obere Hälfte: b[n-2], b[n-1] (die schwächsten B-Teams, die NICHT Primärspieler sind)
-        var bFueller = b.Skip(4).ToList();  // B5, B6 für n=6
-        // A-Füller für untere Hälfte: a[n-2], a[n-1] (die schwächsten A-Teams)
-        var aFueller = a.Skip(4).ToList();  // A5, A6 für n=6
+        // Rangliste je Gruppe (bester → schlechtester)
+        var ranglisten = turnier.Gruppen
+            .Select(g => wertung.GruppenRanglisteBerechnen(g, turnier.Wertungssystem)
+                                .Select(e => e.TeamId).ToList())
+            .ToList();
 
-        // Achtelfinale – obere Hälfte: A3/A4 vs B6/B5
-        var topAchtel = new List<Spiel>();
-        var aPlayer = a.Skip(2).Take(2).ToList();  // A3, A4
-        for (int i = 0; i < Math.Min(aPlayer.Count, bFueller.Count); i++)
+        // Platzierungs-Ebenen: Ebene k enthält je ein Team pro Gruppe mit mindestens k+1 Teams
+        // (Ebene 0 = alle Gruppensieger, Ebene 1 = alle Zweiten, …). Die Gruppenzugehörigkeit je
+        // Team wird für die spätere Gruppentrennung mitgeführt.
+        int maxTiefe = ranglisten.Select(r => r.Count).DefaultIfEmpty(0).Max();
+        var ebenen = new List<List<Guid>>();
+        var gruppeVon = new Dictionary<Guid, int>();
+        int teamAnzahl = 0;
+        for (int ebene = 0; ebene < maxTiefe; ebene++)
         {
-            var spiel = ErstelleSpiel(aPlayer[i], bFueller[bFueller.Count - 1 - i],
-                                      null, null, "Achtelfinale", nr++);
-            topAchtel.Add(spiel);
-            turnier.Finalrundenspiele.Add(spiel);
+            var ebenenTeams = new List<Guid>();
+            for (int gi = 0; gi < ranglisten.Count; gi++)
+            {
+                if (ebene >= ranglisten[gi].Count) continue;
+                var teamId = ranglisten[gi][ebene];
+                gruppeVon[teamId] = gi;
+                ebenenTeams.Add(teamId);
+            }
+            ebenen.Add(ebenenTeams);
+            teamAnzahl += ebenenTeams.Count;
         }
 
-        // Achtelfinale – untere Hälfte: B3/B4 vs A6/A5
-        var bottomAchtel = new List<Spiel>();
-        var bPlayer = b.Skip(2).Take(2).ToList();  // B3, B4
-        for (int i = 0; i < Math.Min(bPlayer.Count, aFueller.Count); i++)
+        if (teamAnzahl < 2)
+            throw new InvalidOperationException(
+                "Die Finalrunde benötigt mindestens zwei qualifizierte Teams.");
+
+        // Bracketgröße = kleinste Zweierpotenz ≥ Teamzahl; Freilose = Bracketgröße − Teamzahl.
+        int n = NaechsteZweierpotenz(teamAnzahl);
+        var positionen = SetzPositionen(n);
+
+        // Jedem Bracket-Slot seine Ebene zuordnen: Slot mit Seed-Rang r gehört zur Ebene, in deren
+        // kumulierten Bereich r fällt; Ränge > Teamzahl sind Freilose. So bleiben Freilose an den
+        // besten Rängen (= mit den Bestplatzierten gepaart).
+        var slotBelegung = new BracketSlot?[n];
+        var slotsProEbene = new List<List<int>>();
+        for (int e = 0; e < ebenen.Count; e++) slotsProEbene.Add([]);
+
+        int grenzeUnten = 0;
+        var rangGrenzen = new List<(int Start, int Ende)>();
+        foreach (var ebeneTeams in ebenen)
         {
-            var spiel = ErstelleSpiel(bPlayer[i], aFueller[aFueller.Count - 1 - i],
-                                      null, null, "Achtelfinale", nr++);
-            bottomAchtel.Add(spiel);
-            turnier.Finalrundenspiele.Add(spiel);
+            rangGrenzen.Add((grenzeUnten, grenzeUnten + ebeneTeams.Count)); // [Start, Ende)
+            grenzeUnten += ebeneTeams.Count;
         }
 
-        // Viertelfinale – obere Hälfte
-        // VF-TL: A2 (Freilos) vs Sieger(Achtelfinale-Top-0)
-        var vfTL = ErstelleSpiel(
-            team1: a.Count > 1 ? a[1] : null,
-            team2: topAchtel.Count > 0 ? null : (a.Count > 2 ? a[2] : null),
-            vorg1: null,
-            vorg2: topAchtel.Count > 0 ? topAchtel[0].Id : null,
-            runde: "Viertelfinale", nr: nr++);
+        for (int slot = 0; slot < n; slot++)
+        {
+            int rang = positionen[slot]; // 1-basiert
+            if (rang > teamAnzahl)
+            {
+                slotBelegung[slot] = BracketSlot.Freilos();
+                continue;
+            }
+            int rang0 = rang - 1;
+            int ebeneIndex = rangGrenzen.FindIndex(g => rang0 >= g.Start && rang0 < g.Ende);
+            slotsProEbene[ebeneIndex].Add(slot);
+        }
 
-        // VF-TR: Sieger(Achtelfinale-Top-1) vs A1 (Freilos)
-        var vfTR = ErstelleSpiel(
-            team1: topAchtel.Count > 1 ? null : (a.Count > 3 ? a[3] : null),
-            team2: a.Count > 0 ? a[0] : null,
-            vorg1: topAchtel.Count > 1 ? topAchtel[1].Id : null,
-            vorg2: null,
-            runde: "Viertelfinale", nr: nr++);
+        // Teams auf ihre Ebenen-Slots verteilen und dabei die Gruppen so gut wie möglich durchmischen
+        // (Teams derselben Gruppe treffen erst möglichst spät aufeinander).
+        BesteBelegungFinden(slotBelegung, ebenen, slotsProEbene, gruppeVon, n, rng);
 
-        // Viertelfinale – untere Hälfte
-        // VF-BL: B2 (Freilos) vs Sieger(Achtelfinale-Bottom-0)
-        var vfBL = ErstelleSpiel(
-            team1: b.Count > 1 ? b[1] : null,
-            team2: bottomAchtel.Count > 0 ? null : (b.Count > 2 ? b[2] : null),
-            vorg1: null,
-            vorg2: bottomAchtel.Count > 0 ? bottomAchtel[0].Id : null,
-            runde: "Viertelfinale", nr: nr++);
+        var slots = slotBelegung.Select(s => s!).ToList();
 
-        // VF-BR: Sieger(Achtelfinale-Bottom-1) vs B1 (Freilos)
-        var vfBR = ErstelleSpiel(
-            team1: bottomAchtel.Count > 1 ? null : (b.Count > 3 ? b[3] : null),
-            team2: b.Count > 0 ? b[0] : null,
-            vorg1: bottomAchtel.Count > 1 ? bottomAchtel[1].Id : null,
-            vorg2: null,
-            runde: "Viertelfinale", nr: nr++);
+        // Runden erzeugen, bis nur noch zwei Zubringer des Finales übrig sind.
+        while (slots.Count > 2)
+        {
+            string runde = RundenName(slots.Count);
+            var naechste = new List<BracketSlot>();
+            for (int i = 0; i < slots.Count; i += 2)
+                naechste.Add(PaarungVerarbeiten(turnier, slots[i], slots[i + 1], runde, ref nr));
+            slots = naechste;
+        }
 
-        turnier.Finalrundenspiele.AddRange([vfTL, vfTR, vfBL, vfBR]);
+        var zubringer1 = slots[0];
+        var zubringer2 = slots[1];
 
-        // Halbfinale
-        var hfTop = ErstelleSpiel(null, null, vfTL.Id, vfTR.Id, "Halbfinale", nr++);
-        var hfBot = ErstelleSpiel(null, null, vfBL.Id, vfBR.Id, "Halbfinale", nr++);
-        turnier.Finalrundenspiele.AddRange([hfTop, hfBot]);
+        // Spiel um Platz 3 nur, wenn beide Zubringer echte Halbfinal-Spiele sind. Bei einem
+        // freilosbedingt einzelnen Halbfinale ist dessen Verlierer automatisch Dritter.
+        if (zubringer1.VorgaengerSpielId is { } hf1 && zubringer2.VorgaengerSpielId is { } hf2)
+        {
+            var platz3 = ErstelleSpiel(null, null, hf1, hf2, "Spiel um Platz 3", nr++);
+            platz3.VorgaengerVerlierer = true;
+            turnier.Finalrundenspiele.Add(platz3);
+        }
 
-        // Spiel um Platz 3 + Finale.
-        // Das Spiel um Platz 3 wird direkt vor dem Finale gespielt (kleinere Spielnummer).
-        // Spiel um Platz 3: die beiden Halbfinal-Verlierer treten gegeneinander an
-        var platz3 = ErstelleSpiel(null, null, hfTop.Id, hfBot.Id, "Spiel um Platz 3", nr++);
-        platz3.VorgaengerVerlierer = true;
-        turnier.Finalrundenspiele.Add(platz3);
+        // Finale (höchste Spielnummer)
+        turnier.Finalrundenspiele.Add(ErstelleSpiel(
+            zubringer1.TeamId, zubringer2.TeamId,
+            zubringer1.VorgaengerSpielId, zubringer2.VorgaengerSpielId,
+            "Finale", nr++));
+    }
 
-        turnier.Finalrundenspiele.Add(
-            ErstelleSpiel(null, null, hfTop.Id, hfBot.Id, "Finale", nr++));
+    /// <summary>
+    /// Verarbeitet eine Bracket-Paarung: Bei zwei echten Teilnehmern entsteht ein Spiel (dessen
+    /// Sieger nachrückt); trifft ein Teilnehmer auf ein Freilos, rückt er ohne Spiel weiter.
+    /// </summary>
+    private static BracketSlot PaarungVerarbeiten(
+        Turnier turnier, BracketSlot a, BracketSlot b, string runde, ref int nr)
+    {
+        if (a.IstFreilos && b.IstFreilos)
+            throw new InvalidOperationException(
+                "Ungültige Bracket-Konfiguration: zwei Freilose wurden gepaart.");
+
+        // Freilos: der andere Teilnehmer rückt kampflos in die nächste Runde.
+        if (a.IstFreilos) return b;
+        if (b.IstFreilos) return a;
+
+        var spiel = ErstelleSpiel(
+            a.TeamId, b.TeamId, a.VorgaengerSpielId, b.VorgaengerSpielId, runde, nr++);
+        turnier.Finalrundenspiele.Add(spiel);
+        return BracketSlot.AusVorgaenger(spiel.Id);
+    }
+
+    /// <summary>Kleinste Zweierpotenz, die ≥ <paramref name="wert"/> ist.</summary>
+    private static int NaechsteZweierpotenz(int wert)
+    {
+        int n = 1;
+        while (n < wert) n <<= 1;
+        return n;
+    }
+
+    /// <summary>
+    /// Liefert die Standard-Setzpositionen eines KO-Baums der Größe <paramref name="n"/> (Zweierpotenz)
+    /// als 1-basierte Seed-Nummern in Slot-Reihenfolge (Seed 1 gegen Seed n, Seed 2 gegen n−1 usw.).
+    /// </summary>
+    private static List<int> SetzPositionen(int n)
+    {
+        var positionen = new List<int> { 1 };
+        while (positionen.Count < n)
+        {
+            int summe = positionen.Count * 2 + 1;
+            var erweitert = new List<int>(positionen.Count * 2);
+            foreach (var seed in positionen)
+            {
+                erweitert.Add(seed);
+                erweitert.Add(summe - seed);
+            }
+            positionen = erweitert;
+        }
+        return positionen;
+    }
+
+    /// <summary>Rundenname anhand der Teilnehmerzahl <paramref name="teilnehmer"/> dieser Runde.</summary>
+    private static string RundenName(int teilnehmer) => teilnehmer switch
+    {
+        2  => "Finale",
+        4  => "Halbfinale",
+        8  => "Viertelfinale",
+        16 => "Achtelfinale",
+        32 => "Sechzehntelfinale",
+        64 => "Zweiunddreißigstelfinale",
+        _  => $"Runde der letzten {teilnehmer}"
+    };
+
+    /// <summary>Mischt die Liste in-place nach Fisher-Yates (Auslosung).</summary>
+    private static void Mischen<T>(IList<T> liste, Random rng)
+    {
+        for (int i = liste.Count - 1; i > 0; i--)
+        {
+            int j = rng.Next(i + 1);
+            (liste[i], liste[j]) = (liste[j], liste[i]);
+        }
+    }
+
+    /// <summary>
+    /// Belegt die Ebenen-Slots des Brackets mit Teams so, dass Teams derselben Gruppe möglichst spät
+    /// aufeinandertreffen (Gruppendurchmischung). Es werden mehrere ausgeloste Belegungen erzeugt und
+    /// die mit den geringsten Trennungskosten gewählt; permutiert wird nur innerhalb einer Ebene, die
+    /// Freilos-Slots (an den besten Rängen) bleiben unberührt.
+    /// </summary>
+    private static void BesteBelegungFinden(
+        BracketSlot?[] belegung, List<List<Guid>> ebenen, List<List<int>> slotsProEbene,
+        IReadOnlyDictionary<Guid, int> gruppeVon, int n, Random rng)
+    {
+        const int Versuche = 300;
+        int maxRunden = BegegnungsEbene(0, n - 1); // = log2(n)
+
+        var arbeit = new Guid[n];              // Slot → Team (Guid.Empty = Freilos/leer)
+        Guid[]? besteBelegung = null;
+        long besteKosten = long.MaxValue;
+
+        for (int versuch = 0; versuch < Versuche; versuch++)
+        {
+            Array.Clear(arbeit);
+            for (int e = 0; e < ebenen.Count; e++)
+            {
+                var teams = new List<Guid>(ebenen[e]);
+                Mischen(teams, rng); // Auslosung innerhalb der Ebene
+                var eslots = slotsProEbene[e];
+                for (int i = 0; i < eslots.Count; i++)
+                    arbeit[eslots[i]] = teams[i];
+            }
+
+            long kosten = TrennungsKosten(arbeit, gruppeVon, n, maxRunden);
+            if (kosten < besteKosten)
+            {
+                besteKosten = kosten;
+                besteBelegung = (Guid[])arbeit.Clone();
+                if (kosten == 0) break; // optimale Durchmischung gefunden
+            }
+        }
+
+        foreach (var slot in slotsProEbene.SelectMany(s => s))
+            belegung[slot] = BracketSlot.AusTeam(besteBelegung![slot]);
+    }
+
+    /// <summary>
+    /// Bewertet eine Slot-Belegung: für jedes Paar gleicher Gruppe fließt eine Strafe ein, die umso
+    /// höher ist, je früher sich die beiden treffen würden (Runde-1-Begegnungen dominieren). 0 = keine
+    /// zwei Teams derselben Gruppe treffen früher als nötig aufeinander.
+    /// </summary>
+    private static long TrennungsKosten(
+        Guid[] slotTeam, IReadOnlyDictionary<Guid, int> gruppeVon, int n, int maxRunden)
+    {
+        long kosten = 0;
+        for (int i = 0; i < n; i++)
+        {
+            if (slotTeam[i] == Guid.Empty || !gruppeVon.TryGetValue(slotTeam[i], out var gi)) continue;
+            for (int j = i + 1; j < n; j++)
+            {
+                if (slotTeam[j] == Guid.Empty || !gruppeVon.TryGetValue(slotTeam[j], out var gj)) continue;
+                if (gi != gj) continue;
+                int runde = BegegnungsEbene(i, j);
+                kosten += 1L << (maxRunden - runde); // frühere Begegnung → höhere Strafe
+            }
+        }
+        return kosten;
+    }
+
+    /// <summary>
+    /// Runde, in der sich die beiden Leaf-Slots <paramref name="slotA"/> und <paramref name="slotB"/>
+    /// frühestens treffen (1 = direkte Paarung in Runde 1; größer = später). Entspricht der Anzahl
+    /// Halbierungen, bis beide im selben Teilbaum liegen.
+    /// </summary>
+    private static int BegegnungsEbene(int slotA, int slotB)
+    {
+        int k = 0;
+        while (slotA != slotB)
+        {
+            slotA >>= 1;
+            slotB >>= 1;
+            k++;
+        }
+        return k;
+    }
+
+    /// <summary>
+    /// Ein Platz im KO-Baum: entweder ein bereits feststehendes Team (direkte Setzung oder kampflos
+    /// vorgerückt), der Sieger eines Vorgängerspiels, oder ein Freilos (beides null).
+    /// </summary>
+    private sealed class BracketSlot
+    {
+        /// <summary>Feststehendes Team dieses Slots; null bei Vorgänger-Slot oder Freilos.</summary>
+        public Guid? TeamId { get; private init; }
+
+        /// <summary>Vorgängerspiel, dessen Sieger einzieht; null bei Team-Slot oder Freilos.</summary>
+        public Guid? VorgaengerSpielId { get; private init; }
+
+        /// <summary>Wahr, wenn dieser Slot ein Freilos ist (weder Team noch Vorgängerspiel).</summary>
+        public bool IstFreilos => TeamId is null && VorgaengerSpielId is null;
+
+        /// <summary>Erzeugt einen Slot mit feststehendem Team.</summary>
+        public static BracketSlot AusTeam(Guid teamId) => new() { TeamId = teamId };
+
+        /// <summary>Erzeugt einen Slot, der vom Sieger eines Vorgängerspiels befüllt wird.</summary>
+        public static BracketSlot AusVorgaenger(Guid spielId) => new() { VorgaengerSpielId = spielId };
+
+        /// <summary>Erzeugt ein Freilos.</summary>
+        public static BracketSlot Freilos() => new();
     }
 
     /// <summary>
@@ -312,10 +529,11 @@ public class SpielplanService : ISpielplanService
         {
             var rangliste = wertung.GruppenRanglisteBerechnen(gruppe, turnier.Wertungssystem);
 
-            // Teams, die noch ein Stechen benötigen, nach Punktstand (Tie-Ebene) gruppieren
+            // Teams, die noch ein Stechen benötigen, nach Punkten UND Torverhältnis (Tie-Ebene)
+            // gruppieren – getrennte Gleichstände gleicher Punktzahl dürfen nicht vermischt werden.
             var stechenGruppen = rangliste
                 .Where(e => e.StehenErforderlich)
-                .GroupBy(e => e.Tabellenpunkte)
+                .GroupBy(e => (e.Tabellenpunkte, e.DuellpunkteGewonnen - e.DuellpunkteVerloren))
                 .Where(g => g.Count() > 1);
 
             foreach (var tieGruppe in stechenGruppen)

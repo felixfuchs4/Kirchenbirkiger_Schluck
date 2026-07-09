@@ -34,6 +34,14 @@ public sealed class SpielerStatistik
 
     /// <summary>Trefferquote (0–1); 0 wenn keine Versuche.</summary>
     public double Quote => Versuche > 0 ? (double)Treffer / Versuche : 0;
+
+    /// <summary>
+    /// Platzierung in der Torschützen-Rangliste (1 = bester). Bei exaktem Gleichstand im
+    /// gewählten Wertungskriterium teilen sich mehrere Spieler denselben Platz – außer auf
+    /// Platz 1, wo ein Stechen (siehe <see cref="Turnier.TorschuetzenStechenSiegerId"/>) über
+    /// die Alleinstellung entscheidet.
+    /// </summary>
+    public int Platz { get; set; }
 }
 
 /// <summary>
@@ -45,10 +53,104 @@ public class StatistikService
     /// <summary>
     /// Liefert die Torschützen-Rangliste: bei <see cref="TorschuetzenWertung.Absolut"/> nach
     /// Treffern, bei <see cref="TorschuetzenWertung.Prozentual"/> nach Trefferquote sortiert.
+    /// Bei exaktem Gleichstand teilen sich Spieler denselben Platz; ist Platz 1 betroffen,
+    /// wird ein in <see cref="Turnier.TorschuetzenStechenSiegerId"/> hinterlegtes Stechen-
+    /// Ergebnis angewendet, sofern der Sieger noch zur aktuellen Gleichstandsgruppe gehört.
     /// </summary>
     /// <param name="turnier">Das auszuwertende Turnier.</param>
-    /// <returns>Sortierte Spielerstatistiken (bester zuerst).</returns>
+    /// <returns>Sortierte Spielerstatistiken (bester zuerst) mit gesetztem <see cref="SpielerStatistik.Platz"/>.</returns>
     public IReadOnlyList<SpielerStatistik> TorschuetzenRangliste(Turnier turnier)
+    {
+        var gruppen = GleichstandsGruppen(turnier);
+        StechenAufloesungAnwenden(turnier, gruppen);
+
+        var ergebnis = new List<SpielerStatistik>();
+        int naechsterPlatz = 1;
+        foreach (var gruppe in gruppen)
+        {
+            foreach (var spieler in gruppe)
+            {
+                spieler.Platz = naechsterPlatz;
+                ergebnis.Add(spieler);
+            }
+            naechsterPlatz += gruppe.Count;
+        }
+
+        return ergebnis;
+    }
+
+    /// <summary>
+    /// Liefert die Spieler, die aktuell auf Platz 1 exakt gleichauf liegen (vor Anwendung
+    /// eines evtl. hinterlegten Stechen-Ergebnisses). Leer, wenn kein Gleichstand besteht.
+    /// </summary>
+    public IReadOnlyList<SpielerStatistik> GleichstandPlatz1(Turnier turnier)
+    {
+        var gruppen = GleichstandsGruppen(turnier);
+        return gruppen.Count > 0 && gruppen[0].Count > 1 ? gruppen[0] : [];
+    }
+
+    /// <summary>
+    /// Gibt an, ob für Platz 1 noch ein Stechen entschieden werden muss: es gibt einen
+    /// Gleichstand, und entweder wurde noch kein Sieger hinterlegt, oder der hinterlegte
+    /// Sieger gehört nicht (mehr) zur aktuellen Gleichstandsgruppe.
+    /// </summary>
+    public bool StechenPlatz1Offen(Turnier turnier)
+    {
+        var gleichstand = GleichstandPlatz1(turnier);
+        return gleichstand.Count > 1 &&
+            (turnier.TorschuetzenStechenSiegerId is not { } siegerId ||
+             gleichstand.All(s => s.SpielerId != siegerId));
+    }
+
+    /// <summary>Hebt den hinterlegten Stechen-Sieger an die Spitze der Platz-1-Gleichstandsgruppe.</summary>
+    private static void StechenAufloesungAnwenden(Turnier turnier, List<List<SpielerStatistik>> gruppen)
+    {
+        if (gruppen.Count == 0 || gruppen[0].Count <= 1) return;
+        if (turnier.TorschuetzenStechenSiegerId is not { } siegerId) return;
+
+        var sieger = gruppen[0].FirstOrDefault(s => s.SpielerId == siegerId);
+        if (sieger is null) return; // hinterlegter Sieger gehört nicht mehr zur Gleichstandsgruppe
+
+        gruppen[0].Remove(sieger);
+        gruppen.Insert(0, [sieger]);
+    }
+
+    /// <summary>
+    /// Sortiert alle Spielerstatistiken absteigend nach dem gewählten Wertungskriterium und
+    /// fasst exakt gleichauf liegende Spieler zu Gruppen zusammen.
+    /// </summary>
+    private List<List<SpielerStatistik>> GleichstandsGruppen(Turnier turnier)
+    {
+        bool prozentual = turnier.TorschuetzenWertung == TorschuetzenWertung.Prozentual;
+
+        var sortiert = StatistikenErmitteln(turnier)
+            .OrderByDescending(s => prozentual ? s.Quote : s.Treffer)
+            .ThenBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var gruppen = new List<List<SpielerStatistik>>();
+        foreach (var spieler in sortiert)
+        {
+            var letzteGruppe = gruppen.Count > 0 ? gruppen[^1] : null;
+            if (letzteGruppe is not null && GleicherWert(letzteGruppe[0], spieler, prozentual))
+                letzteGruppe.Add(spieler);
+            else
+                gruppen.Add([spieler]);
+        }
+
+        return gruppen;
+    }
+
+    /// <summary>
+    /// Vergleicht zwei Spieler auf exakten Gleichstand im Wertungskriterium. Die Trefferquote
+    /// wird per Kreuzmultiplikation (Bruchvergleich) statt Fließkomma-Gleichheit geprüft, um
+    /// Rundungsfehler zu vermeiden.
+    /// </summary>
+    private static bool GleicherWert(SpielerStatistik a, SpielerStatistik b, bool prozentual) =>
+        prozentual ? (long)a.Treffer * b.Versuche == (long)b.Treffer * a.Versuche : a.Treffer == b.Treffer;
+
+    /// <summary>Ermittelt für jeden Spieler mit mindestens einem Versuch die Trefferstatistik.</summary>
+    private static List<SpielerStatistik> StatistikenErmitteln(Turnier turnier)
     {
         var treffer = new Dictionary<Guid, int>();
         var versuche = new Dictionary<Guid, int>();
@@ -81,11 +183,7 @@ public class StatistikService
             }
         }
 
-        IEnumerable<SpielerStatistik> sortiert = turnier.TorschuetzenWertung == TorschuetzenWertung.Prozentual
-            ? statistiken.OrderByDescending(s => s.Quote).ThenByDescending(s => s.Treffer)
-            : statistiken.OrderByDescending(s => s.Treffer).ThenByDescending(s => s.Quote);
-
-        return sortiert.ToList();
+        return statistiken;
     }
 
     private static void Akkumulieren(

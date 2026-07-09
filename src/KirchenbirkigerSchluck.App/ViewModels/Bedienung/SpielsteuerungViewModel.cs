@@ -133,6 +133,13 @@ public partial class SpielsteuerungViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(SpielAbschliessenCommand))]
     private bool _kannSpielAbschliessen;
 
+    /// <summary>
+    /// Gibt an, ob die Partie regulär (uneinholbar) entschieden ist – steuert den Hinweis
+    /// „Spiel entschieden". Beim Stechen bleibt dieser Hinweis aus.
+    /// </summary>
+    [ObservableProperty]
+    private bool _spielEntschieden;
+
     /// <summary>Zusammenfassung für den Abschluss-Dialog.</summary>
     [ObservableProperty]
     private string _zusammenfassungsText = string.Empty;
@@ -336,33 +343,23 @@ public partial class SpielsteuerungViewModel : ObservableObject
         Team1Name = TeamName(turnier, _aktuellesSpiel.Team1Id);
         Team2Name = TeamName(turnier, _aktuellesSpiel.Team2Id);
 
-        DuellsiegeTeam1 = _aktuellesSpiel.Einzelduelle
-            .Count(d => d.Ergebnis?.SiegerId == _aktuellesSpiel.Team1Id);
-        DuellsiegeTeam2 = _aktuellesSpiel.Einzelduelle
-            .Count(d => d.Ergebnis?.SiegerId == _aktuellesSpiel.Team2Id);
-
-        IstStechen = _aktuellesSpiel.Einzelduelle.Any(d => d.IstStechen);
+        // Best-of-5-Auswertung zentral über den Core-Service (uneinholbar → entschieden;
+        // solange Ausgleich möglich, wird weitergespielt; Gleichstand nach fünf → Stechen).
+        var fortschritt = _spielsteuerungService.Auswerten(_aktuellesSpiel);
+        DuellsiegeTeam1       = fortschritt.DuellsiegeTeam1;
+        DuellsiegeTeam2       = fortschritt.DuellsiegeTeam2;
+        IstStechen            = fortschritt.StechenNoetig;
+        DuellLaeuft           = fortschritt.DuellLaeuft;
+        KannSpielAbschliessen = fortschritt.KannAbschliessen;
+        SpielEntschieden      = fortschritt.KannAbschliessen && !fortschritt.StechenNoetig;
 
         var aktivesDuell = _aktuellesSpiel.Einzelduelle.FirstOrDefault(d => d.Ergebnis is null);
-        DuellLaeuft = aktivesDuell is not null;
 
         // Versuch-Text
         if (aktivesDuell is not null)
             AktuellesVersuchText = $"Versuch {aktivesDuell.Versuche.Count + 1} von 3";
         else
             AktuellesVersuchText = string.Empty;
-
-        // Stechen erkennen: 5 reguläre Duelle fertig, kein eindeutiger Sieger
-        var regulaereAbgeschlossen = _aktuellesSpiel.Einzelduelle.Count(d => !d.IstStechen && d.Ergebnis is not null);
-        var bereitsFuerStechen = regulaereAbgeschlossen >= 5 && DuellsiegeTeam1 == DuellsiegeTeam2;
-        if (bereitsFuerStechen && !IstStechen)
-            IstStechen = true;
-
-        // Spielabschluss möglich: Ergebnis eindeutig (ein Team hat mehr Duelsiege nach 5 regulären)
-        var regulaereGesamt = _aktuellesSpiel.Einzelduelle.Count(d => !d.IstStechen);
-        var stechenAbgeschlossen = _aktuellesSpiel.Einzelduelle.Any(d => d.IstStechen && d.Ergebnis is not null);
-        KannSpielAbschliessen = (regulaereGesamt >= 5 && DuellsiegeTeam1 != DuellsiegeTeam2 && aktivesDuell is null)
-                               || stechenAbgeschlossen;
 
         // Teams auflösen – vor DuellUebersicht benötigt
         var team1 = turnier.Teams.FirstOrDefault(t => t.Id == _aktuellesSpiel.Team1Id);
@@ -385,6 +382,19 @@ public partial class SpielsteuerungViewModel : ObservableObject
         if (spielerErgaenzt)
             _turnierService.TurnierSpeichern(turnier);
 
+        // Spielerreihenfolge einmalig auslosen (nach dem Auffüllen auf 5), sobald das Spiel läuft.
+        // Idempotent: eine bereits festgelegte Reihenfolge bleibt erhalten.
+        if (team1 is not null && team2 is not null &&
+            (_aktuellesSpiel.Spieler1Reihenfolge.Count == 0 || _aktuellesSpiel.Spieler2Reihenfolge.Count == 0))
+        {
+            _spielsteuerungService.SpielerReihenfolgeFestlegen(
+                _aktuellesSpiel,
+                team1.Spieler.Select(s => s.Id).ToList(),
+                team2.Spieler.Select(s => s.Id).ToList(),
+                Random.Shared);
+            _turnierService.TurnierSpeichern(turnier);
+        }
+
         // ComboBoxen befüllen
         Team1Spieler.Clear();
         foreach (var sp in team1?.Spieler ?? [])
@@ -394,13 +404,13 @@ public partial class SpielsteuerungViewModel : ObservableObject
         foreach (var sp in team2?.Spieler ?? [])
             Team2Spieler.Add(sp);
 
-        // Spieler für nächstes Duell vorschlagen (nur wenn kein Duell läuft)
+        // Spieler für nächstes Duell vorschlagen (nur wenn kein Duell läuft) – gemäß ausgeloster
+        // Reihenfolge. Manuelles Überschreiben in den ComboBoxen bleibt möglich.
         if (!DuellLaeuft && team1 is not null && team2 is not null)
         {
-            var regulaereCount = _aktuellesSpiel.Einzelduelle.Count(d => !d.IstStechen);
-            var idx = regulaereCount; // 0-basiert → Duell 1 = Spieler[0]
-            GewaehlterSpieler1 = idx < team1.Spieler.Count ? team1.Spieler[idx] : null;
-            GewaehlterSpieler2 = idx < team2.Spieler.Count ? team2.Spieler[idx] : null;
+            var idx = _aktuellesSpiel.Einzelduelle.Count(d => !d.IstStechen); // 0-basiert
+            GewaehlterSpieler1 = SpielerAusReihenfolge(team1.Spieler, _aktuellesSpiel.Spieler1Reihenfolge, idx);
+            GewaehlterSpieler2 = SpielerAusReihenfolge(team2.Spieler, _aktuellesSpiel.Spieler2Reihenfolge, idx);
         }
 
         // Editierbare Duell-Liste: alle 5 regulären Slots (gespielt, aktiv oder geplant)
@@ -418,8 +428,8 @@ public partial class SpielsteuerungViewModel : ObservableObject
             else
             {
                 var idx = nr - 1;
-                var sp1 = idx < team1Spieler.Count ? team1Spieler[idx].Name : $"Spieler {nr}";
-                var sp2 = idx < team2Spieler.Count ? team2Spieler[idx].Name : $"Spieler {nr}";
+                var sp1 = SpielerAusReihenfolge(team1Spieler, _aktuellesSpiel.Spieler1Reihenfolge, idx)?.Name ?? $"Spieler {nr}";
+                var sp2 = SpielerAusReihenfolge(team2Spieler, _aktuellesSpiel.Spieler2Reihenfolge, idx)?.Name ?? $"Spieler {nr}";
                 BearbeitbareDuelle.Add(new DuellBearbeitenModel
                 {
                     Duellnummer = nr,
@@ -521,6 +531,21 @@ public partial class SpielsteuerungViewModel : ObservableObject
     {
         _turnierService.TurnierSpeichern(turnier);
         _turnierZustand.AenderungMelden();
+    }
+
+    /// <summary>
+    /// Liefert den Spieler an Position <paramref name="index"/> gemäß der ausgelosten Reihenfolge.
+    /// Fällt auf die feste Aufstellungsreihenfolge zurück, falls keine Auslosung vorliegt.
+    /// </summary>
+    private static Spieler? SpielerAusReihenfolge(
+        IReadOnlyList<Spieler> spieler, IReadOnlyList<Guid> reihenfolge, int index)
+    {
+        if (index < reihenfolge.Count)
+        {
+            var ausReihenfolge = spieler.FirstOrDefault(s => s.Id == reihenfolge[index]);
+            if (ausReihenfolge is not null) return ausReihenfolge;
+        }
+        return index < spieler.Count ? spieler[index] : null;
     }
 
     private static IEnumerable<Spiel> AlleSpiele(Turnier turnier) =>

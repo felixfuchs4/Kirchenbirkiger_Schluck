@@ -28,17 +28,11 @@ public sealed class SiegerehrungSchritt
     /// <summary>Platzierung (1 = bester).</summary>
     public int Platz { get; init; }
 
-    /// <summary>Name (Spieler- oder Teamname).</summary>
+    /// <summary>Name (Spieler- oder Teamname(n)); dient nur der Verwaltungs-Vorschau.</summary>
     public string Name { get; init; } = string.Empty;
 
-    /// <summary>Untertitel (z. B. Teamname bei Spielern).</summary>
-    public string Untertitel { get; init; } = string.Empty;
-
-    /// <summary>Optionaler Logo-Pfad.</summary>
-    public string? LogoPfad { get; init; }
-
-    /// <summary>Detailangabe (Treffer / Quote); bei Team-Schritten leer.</summary>
-    public string Detail { get; init; } = string.Empty;
+    /// <summary>Spieler dieses Schritts – bei geteiltem Platz mehrere; leer bei Team-Schritten.</summary>
+    public IReadOnlyList<SpielerZeileModel> Spieler { get; init; } = [];
 
     /// <summary>Teams dieses Schritts – bei geteiltem Platz mehrere; leer bei Spieler-Schritten.</summary>
     public IReadOnlyList<EndplatzierungZeileModel> Teams { get; init; } = [];
@@ -165,25 +159,32 @@ public partial class GewinnerViewModel : ObservableObject
 
     private void SchritteAufbauen(Turnier turnier)
     {
-        // Phase 1: Torschützenkönig – die 5 besten, von Platz 5 zu Platz 1
-        var top = _statistikService.TorschuetzenRangliste(turnier).Take(5).ToList();
-        for (int i = top.Count - 1; i >= 0; i--)
+        // Phase 1: Treffsicherste Spieler – nach Platz gruppiert (geteilte Plätze gemeinsam,
+        // außer Platz 1 – dort entscheidet ein Stechen über die Alleinstellung), die 5 besten
+        // Plätze, von hinten nach vorne
+        var rangliste = _statistikService.TorschuetzenRangliste(turnier);
+        var plaetze = rangliste.GroupBy(s => s.Platz).OrderBy(g => g.Key).Take(5).ToList();
+        for (int i = plaetze.Count - 1; i >= 0; i--)
         {
-            var s = top[i];
-            string detail = turnier.TorschuetzenWertung == TorschuetzenWertung.Prozentual
-                ? $"{s.Quote * 100:0}% – {s.Treffer} von {s.Versuche} Versuchen"
-                : $"{s.Treffer} Treffer";
+            var gruppe = plaetze[i];
+            var spieler = gruppe.Select(s => new SpielerZeileModel
+            {
+                Name     = s.Name,
+                TeamName = s.TeamName,
+                LogoPfad = s.LogoPfad,
+                Detail   = turnier.TorschuetzenWertung == TorschuetzenWertung.Prozentual
+                    ? $"{s.Quote * 100:0}% – {s.Treffer} von {s.Versuche} Versuchen"
+                    : $"{s.Treffer} Treffer"
+            }).ToList();
 
             _schritte.Add(new SiegerehrungSchritt
             {
                 IstSpieler  = true,
                 PhasenTitel = "Treffsicherster Spieler",
-                Platz       = i + 1,
-                Name        = s.Name,
-                Untertitel  = s.TeamName,
-                LogoPfad    = s.LogoPfad,
-                Detail      = detail,
-                IstSieger   = i == 0
+                Platz       = gruppe.Key,
+                Name        = string.Join(", ", spieler.Select(s => s.Name)), // nur für die Verwaltungs-Vorschau
+                Spieler     = spieler,
+                IstSieger   = gruppe.Key == 1
             });
         }
 
@@ -197,7 +198,6 @@ public partial class GewinnerViewModel : ObservableObject
                 PhasenTitel = "Endplatzierung",
                 Platz       = gruppe.Key,
                 Name        = string.Join(", ", teams.Select(t => t.TeamName)), // nur für die Verwaltungs-Vorschau
-                Untertitel  = string.Empty,
                 Teams       = teams,
                 IstSieger   = gruppe.Key == 1
             });

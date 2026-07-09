@@ -17,6 +17,7 @@ using KirchenbirkigerSchluck.Core.Interfaces;
 using KirchenbirkigerSchluck.Core.Services;
 using KirchenbirkigerSchluck.Data.Backup;
 using KirchenbirkigerSchluck.Data.Repositories;
+using KirchenbirkigerSchluck.Data.Speicherstaende;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace KirchenbirkigerSchluck.App;
@@ -78,12 +79,19 @@ public partial class App : Application
         const string turnierPfad = "turnier.json";
         const string backupPfad = "backups";
 
+        const string speicherstandPfad = "speicherstaende";
+
         // Datenschicht – als Konkretyp UND Interface registrieren
         var turnierRepo = new TurnierRepository(turnierPfad);
         services.AddSingleton(turnierRepo);
         services.AddSingleton<ITurnierRepository>(turnierRepo);
         services.AddSingleton(new BackupManager(backupPfad));
         services.AddSingleton(new LogoService("logos"));
+
+        // Benannte Speicherstände (eigenes Verzeichnis) + automatische Backups zum Laden
+        var speicherstandService = new SpeicherstandService(speicherstandPfad, backupPfad);
+        services.AddSingleton(speicherstandService);
+        services.AddSingleton<ISpeicherstandService>(speicherstandService);
 
         // Anwendungslogik (Core-Services)
         services.AddSingleton<ITurnierService, TurnierService>();

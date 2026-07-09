@@ -50,4 +50,24 @@ public interface ISpielsteuerungService
     /// <param name="spiel">Das abzuschließende Spiel.</param>
     /// <param name="turnier">Das Turnier (für Wertungssystem-Zugriff).</param>
     void SpielAbschliessen(Spiel spiel, Turnier turnier);
+
+    /// <summary>
+    /// Wertet den aktuellen Fortschritt einer Partie im Best-of-5-Modus aus (rein lesend):
+    /// Duellsiege, verbleibende reguläre Duelle, ob ein Duell läuft, ob ein Stechen nötig ist und
+    /// ob die Partie abgeschlossen werden kann (uneinholbar entschieden oder Stechen entschieden).
+    /// </summary>
+    /// <param name="spiel">Das auszuwertende Spiel.</param>
+    /// <returns>Der ermittelte Spielfortschritt.</returns>
+    SpielFortschritt Auswerten(Spiel spiel);
+
+    /// <summary>
+    /// Legt – falls noch nicht geschehen – je Team eine ausgeloste Spielerreihenfolge fest.
+    /// Idempotent: bereits gesetzte Reihenfolgen bleiben unverändert.
+    /// </summary>
+    /// <param name="spiel">Das Spiel, dessen Reihenfolgen gesetzt werden.</param>
+    /// <param name="team1SpielerIds">Spieler-Ids von Team 1.</param>
+    /// <param name="team2SpielerIds">Spieler-Ids von Team 2.</param>
+    /// <param name="rng">Zufallsquelle für die Auslosung.</param>
+    void SpielerReihenfolgeFestlegen(
+        Spiel spiel, IReadOnlyList<Guid> team1SpielerIds, IReadOnlyList<Guid> team2SpielerIds, Random rng);
 }

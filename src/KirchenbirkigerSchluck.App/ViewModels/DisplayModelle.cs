@@ -97,8 +97,30 @@ public sealed class GruppenTabellenEintragAnzeigeModel
     /// <summary>Gesamtpunktzahl.</summary>
     public int Punkte { get; init; }
 
-    /// <summary>Gibt an, ob für diese Position noch ein Stechen nötig ist.</summary>
-    public bool StechenNoetig { get; init; }
+    /// <summary>
+    /// Kürzel zur Tiebreak-Kennzeichnung neben der Platzierung: „DV" (Direkter Vergleich),
+    /// „S" (Stechen) oder leer, wenn die Platzierung ohne diese Kriterien feststeht.
+    /// </summary>
+    public string TiebreakKuerzel { get; init; } = string.Empty;
+
+    /// <summary>Gibt an, ob ein Tiebreak-Kürzel angezeigt werden soll.</summary>
+    public bool HatTiebreak => !string.IsNullOrEmpty(TiebreakKuerzel);
+}
+
+/// <summary>Eine Zeile in der Ehrung des treffsichersten Spielers (bei geteiltem Platz mehrere Zeilen je Schritt).</summary>
+public sealed class SpielerZeileModel
+{
+    /// <summary>Name des Spielers.</summary>
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>Name des zugehörigen Teams.</summary>
+    public string TeamName { get; init; } = string.Empty;
+
+    /// <summary>Optionaler Logo-Pfad des Teams.</summary>
+    public string? LogoPfad { get; init; }
+
+    /// <summary>Detailangabe (Treffer bzw. Trefferquote).</summary>
+    public string Detail { get; init; } = string.Empty;
 }
 
 /// <summary>Eine Zeile in der Endplatzierungsanzeige (Gewinner-Screen).</summary>

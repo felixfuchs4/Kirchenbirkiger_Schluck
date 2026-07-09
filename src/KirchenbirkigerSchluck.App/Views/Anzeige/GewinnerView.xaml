@@ -62,32 +62,45 @@
                            Effect="{StaticResource GlowGoldSanft}"
                            Text="{Binding AktuellerSchritt.Platz, StringFormat='{}{0}. Platz'}" />
 
-                <!-- Spieler-Layout: einzelner Spieler mit Logo, Name, Team und Detail -->
-                <StackPanel HorizontalAlignment="Center"
-                            Visibility="{Binding AktuellerSchritt.IstSpieler, Converter={StaticResource BoolToVisibility}}">
-                    <!-- Logo -->
-                    <Image Source="{Binding AktuellerSchritt.LogoPfad, Converter={StaticResource PfadZuBitmap}}"
-                           Height="160" Stretch="Uniform" Margin="0,0,0,20"
-                           Visibility="{Binding AktuellerSchritt.LogoPfad, Converter={StaticResource PfadZuVisibility}}" />
+                <!-- Spieler-Layout: ein oder mehrere Spieler desselben Platzes nebeneinander -->
+                <ItemsControl ItemsSource="{Binding AktuellerSchritt.Spieler}"
+                              HorizontalAlignment="Center"
+                              Visibility="{Binding AktuellerSchritt.IstSpieler, Converter={StaticResource BoolToVisibility}}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel HorizontalAlignment="Center" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="32,10" VerticalAlignment="Top" HorizontalAlignment="Center">
+                                <!-- Logo -->
+                                <Image Source="{Binding LogoPfad, Converter={StaticResource PfadZuBitmap}}"
+                                       Height="160" Stretch="Uniform" Margin="0,0,0,20"
+                                       Visibility="{Binding LogoPfad, Converter={StaticResource PfadZuVisibility}}" />
 
-                    <!-- Name -->
-                    <TextBlock Text="{Binding AktuellerSchritt.Name}"
-                               Style="{StaticResource SiegerHervorhebungStyle}" FontSize="68" />
+                                <!-- Name -->
+                                <TextBlock Text="{Binding Name}"
+                                           Style="{StaticResource SiegerHervorhebungStyle}" FontSize="68"
+                                           TextAlignment="Center" />
 
-                    <!-- Untertitel (Team bei Spielern) -->
-                    <TextBlock Text="{Binding AktuellerSchritt.Untertitel}"
-                               Foreground="{StaticResource PinselText}" FontSize="28"
-                               HorizontalAlignment="Center" Margin="0,8,0,0"
-                               TextWrapping="Wrap" TextAlignment="Center" />
+                                <!-- Team -->
+                                <TextBlock Text="{Binding TeamName}"
+                                           Foreground="{StaticResource PinselText}" FontSize="28"
+                                           HorizontalAlignment="Center" Margin="0,8,0,0"
+                                           TextWrapping="Wrap" TextAlignment="Center" />
 
-                    <!-- Detail (Treffer / Quote) -->
-                    <Border Style="{StaticResource ErgebnisPilleStyle}" Padding="28,10"
-                            Margin="0,24,0,0">
-                        <TextBlock Text="{Binding AktuellerSchritt.Detail}"
-                                   Foreground="{StaticResource PinselAkzent}"
-                                   FontSize="26" FontWeight="Bold" />
-                    </Border>
-                </StackPanel>
+                                <!-- Detail (Treffer / Quote) -->
+                                <Border Style="{StaticResource ErgebnisPilleStyle}" Padding="28,10"
+                                        Margin="0,24,0,0" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding Detail}"
+                                               Foreground="{StaticResource PinselAkzent}"
+                                               FontSize="26" FontWeight="Bold" />
+                                </Border>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
 
                 <!-- Team-Layout: ein oder mehrere Teams desselben Platzes nebeneinander -->
                 <ItemsControl ItemsSource="{Binding AktuellerSchritt.Teams}"

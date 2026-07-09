@@ -47,6 +47,13 @@ public class Turnier
     /// <summary>Wertungsart für den treffsichersten Spieler (Torschützenkönig).</summary>
     public TorschuetzenWertung TorschuetzenWertung { get; set; } = TorschuetzenWertung.Absolut;
 
+    /// <summary>
+    /// Manuell bestimmter Sieger eines Stechens um Platz 1 der Torschützen-Rangliste, falls
+    /// mehrere Spieler dort exakt gleichauf liegen. Null, solange kein Stechen nötig war,
+    /// noch nicht entschieden wurde, oder sich die Gleichstandsgruppe seither geändert hat.
+    /// </summary>
+    public Guid? TorschuetzenStechenSiegerId { get; set; }
+
     /// <summary>Aktueller Fortschrittsstand des Turniers.</summary>
     public TurnierStatus Status { get; set; } = TurnierStatus.InVorbereitung;
 

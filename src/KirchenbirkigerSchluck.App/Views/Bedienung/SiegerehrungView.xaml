@@ -23,6 +23,37 @@
                           Style="{StaticResource MaterialDesignOutlinedComboBox}"
                           Width="280" HorizontalAlignment="Left" Margin="0,0,0,20" />
 
+                <!-- Stechen um Platz 1 bei Gleichstand in der Torschützen-Rangliste -->
+                <materialDesign:Card Padding="20" Margin="0,0,0,20"
+                                      Background="{StaticResource PinselFlaecheDunkel}"
+                                      Visibility="{Binding StechenErforderlich, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel>
+                        <TextBlock Text="Stechen um Platz 1 erforderlich"
+                                   Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                   Foreground="{StaticResource PinselAkzent}" Margin="0,0,0,4" />
+                        <TextBlock Text="Mehrere Spieler sind bei der Trefferauswertung exakt gleichauf. Stechen live durchführen und den Sieger hier bestätigen."
+                                   Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                   Foreground="{StaticResource PinselTextGedaempft}" TextWrapping="Wrap" Margin="0,0,0,12" />
+
+                        <ComboBox materialDesign:HintAssist.Hint="Sieger des Stechens"
+                                  ItemsSource="{Binding StechenKandidaten}"
+                                  SelectedItem="{Binding StechenAuswahl}"
+                                  DisplayMemberPath="Name"
+                                  Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                  Width="280" HorizontalAlignment="Left" Margin="0,0,0,12" />
+
+                        <Button Command="{Binding StechenSiegerBestaetigenCommand}"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                HorizontalAlignment="Left" Padding="20,0" Height="44" Margin="0,0,0,12">
+                            <TextBlock Text="Sieger bestätigen" />
+                        </Button>
+
+                        <TextBlock Text="{Binding StechenAuswahl.Name, StringFormat='Bestätigt: {0} ist Platz 1'}"
+                                   Foreground="{StaticResource PinselAkzent}" FontWeight="SemiBold"
+                                   Visibility="{Binding StechenEntschieden, Converter={StaticResource BoolToVisibility}}" />
+                    </StackPanel>
+                </materialDesign:Card>
+
                 <Button Command="{Binding StartenCommand}"
                         Style="{StaticResource MaterialDesignRaisedButton}"
                         HorizontalAlignment="Left" Height="52" Padding="24,0" FontWeight="SemiBold"
