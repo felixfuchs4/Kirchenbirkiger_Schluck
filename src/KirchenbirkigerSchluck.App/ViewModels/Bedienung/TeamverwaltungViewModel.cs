@@ -72,6 +72,7 @@ public partial class TeamverwaltungViewModel : ObservableObject
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(TeamHinzufuegenCommand))]
     [NotifyCanExecuteChangedFor(nameof(TeamEntfernenCommand))]
+    [NotifyCanExecuteChangedFor(nameof(TeamAusListeEntfernenCommand))]
     private bool _istInVorbereitung;
 
     // ──── Detailfelder des ausgewählten Teams ────────────────────────────────
@@ -141,10 +142,33 @@ public partial class TeamverwaltungViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(KannTeamEntfernen))]
     private void TeamEntfernen()
     {
-        var turnier = _turnierZustand.AktuellesTurnier;
-        if (turnier is null || AusgewaehltesTeam is null) return;
+        if (AusgewaehltesTeam is null) return;
+        TeamLoeschen(AusgewaehltesTeam.Id);
+    }
 
-        var team = turnier.Teams.FirstOrDefault(t => t.Id == AusgewaehltesTeam.Id);
+    private bool KannTeamEntfernen() =>
+        HatAusgewaehltesTeam && IstInVorbereitung;
+
+    /// <summary>
+    /// Entfernt ein Team direkt aus der Teamliste (per Papierkorb-Symbol je Zeile),
+    /// ohne dass es zuvor für die Detailansicht ausgewählt werden muss.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(KannTeamAusListeEntfernen))]
+    private void TeamAusListeEntfernen(TeamAnzeigeModel? team)
+    {
+        if (team is null) return;
+        TeamLoeschen(team.Id);
+    }
+
+    private bool KannTeamAusListeEntfernen() => IstInVorbereitung;
+
+    /// <summary>Fragt nach Bestätigung und entfernt das Team mit der angegebenen Id samt aller Spieler.</summary>
+    private void TeamLoeschen(Guid teamId)
+    {
+        var turnier = _turnierZustand.AktuellesTurnier;
+        if (turnier is null) return;
+
+        var team = turnier.Teams.FirstOrDefault(t => t.Id == teamId);
         if (team is null) return;
 
         var bestaetigung = MessageBox.Show(
@@ -154,12 +178,12 @@ public partial class TeamverwaltungViewModel : ObservableObject
 
         turnier.Teams.Remove(team);
         _turnierService.TurnierSpeichern(turnier);
-        AusgewaehltesTeam = null;
+
+        if (AusgewaehltesTeam?.Id == teamId)
+            AusgewaehltesTeam = null;
+
         _turnierZustand.AenderungMelden();
     }
-
-    private bool KannTeamEntfernen() =>
-        HatAusgewaehltesTeam && IstInVorbereitung;
 
     // ──── Kommandos: Logo ────────────────────────────────────────────────────
 

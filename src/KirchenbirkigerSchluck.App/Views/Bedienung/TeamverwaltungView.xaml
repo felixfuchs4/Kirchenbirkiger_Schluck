@@ -46,9 +46,15 @@
                          ScrollViewer.VerticalScrollBarVisibility="Auto">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel Orientation="Horizontal" Margin="4,8">
+                            <Grid Margin="4,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
                                 <!-- Logo (falls vorhanden) bzw. Platzhalter-Icon -->
-                                <Border Width="30" Height="30" CornerRadius="6"
+                                <Border Grid.Column="0" Width="30" Height="30" CornerRadius="6"
                                         Background="{StaticResource PinselFlaecheAktiv}" Margin="0,0,12,0"
                                         VerticalAlignment="Center">
                                     <Grid>
@@ -72,10 +78,23 @@
                                                Stretch="Uniform" Margin="3" />
                                     </Grid>
                                 </Border>
-                                <TextBlock Text="{Binding AnzeigeName}"
+                                <TextBlock Grid.Column="1" Text="{Binding AnzeigeName}"
                                            VerticalAlignment="Center"
-                                           FontSize="15" />
-                            </StackPanel>
+                                           FontSize="15" TextTrimming="CharacterEllipsis" />
+
+                                <!-- Team direkt aus der Liste löschen, ohne es zuvor öffnen zu müssen -->
+                                <Button Grid.Column="2"
+                                        Command="{Binding DataContext.TeamAusListeEntfernenCommand,
+                                                  RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                        CommandParameter="{Binding}"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        ToolTip="Team löschen"
+                                        Padding="6"
+                                        Width="32" Height="32">
+                                    <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"
+                                                             Foreground="{StaticResource PinselGefahr}" />
+                                </Button>
+                            </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>

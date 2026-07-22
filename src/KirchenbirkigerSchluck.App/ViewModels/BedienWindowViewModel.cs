@@ -7,6 +7,7 @@
  *************************************************************/
 
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using KirchenbirkigerSchluck.App.ViewModels.Bedienung;
 
 namespace KirchenbirkigerSchluck.App.ViewModels;
@@ -33,6 +34,9 @@ public partial class BedienWindowViewModel : ObservableObject
     /// <summary>ViewModel für den Tabellen-Tab.</summary>
     public TabellenViewModel TabellenVm { get; }
 
+    /// <summary>ViewModel für den Statistik-Tab.</summary>
+    public StatistikViewModel StatistikVm { get; }
+
     /// <summary>ViewModel für den Spielsteuerungs-Tab.</summary>
     public SpielsteuerungViewModel SpielsteuerungVm { get; }
 
@@ -47,7 +51,7 @@ public partial class BedienWindowViewModel : ObservableObject
 
     // ──── Tab-Navigation ─────────────────────────────────────────────────────
 
-    /// <summary>Index des aktuell aktiven Tabs (0 = Turnier, 1 = Teamverwaltung, 2 = Gruppen, 3 = Spielplan, 4 = Tabellen, 5 = Spiel, 6 = Korrektur, 7 = Siegerehrung, 8 = Einstellungen).</summary>
+    /// <summary>Index des aktuell aktiven Tabs (0 = Turnier, 1 = Teamverwaltung, 2 = Gruppen, 3 = Spielplan, 4 = Tabellen, 5 = Statistik, 6 = Spiel, 7 = Korrektur, 8 = Siegerehrung, 9 = Einstellungen).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AktivesTabViewModel))]
     private int _ausgewaehlterTabIndex;
@@ -60,10 +64,11 @@ public partial class BedienWindowViewModel : ObservableObject
         2 => GruppenAuslosungVm,
         3 => SpielplanVm,
         4 => TabellenVm,
-        5 => SpielsteuerungVm,
-        6 => KorrekturVm,
-        7 => SiegerehrungVm,
-        8 => EinstellungenVm,
+        5 => StatistikVm,
+        6 => SpielsteuerungVm,
+        7 => KorrekturVm,
+        8 => SiegerehrungVm,
+        9 => EinstellungenVm,
         _ => TurnierVerwaltungVm
     };
 
@@ -76,6 +81,7 @@ public partial class BedienWindowViewModel : ObservableObject
         GruppenAuslosungViewModel gruppenAuslosungVm,
         SpielplanViewModel spielplanVm,
         TabellenViewModel tabellenVm,
+        StatistikViewModel statistikVm,
         SpielsteuerungViewModel spielsteuerungVm,
         KorrekturViewModel korrekturVm,
         SiegerehrungViewModel siegerehrungVm,
@@ -86,13 +92,14 @@ public partial class BedienWindowViewModel : ObservableObject
         GruppenAuslosungVm = gruppenAuslosungVm;
         SpielplanVm = spielplanVm;
         TabellenVm = tabellenVm;
+        StatistikVm = statistikVm;
         SpielsteuerungVm = spielsteuerungVm;
         KorrekturVm = korrekturVm;
         SiegerehrungVm = siegerehrungVm;
         EinstellungenVm = einstellungenVm;
 
-        // Nach Spielstart automatisch zum Spielsteuerungs-Tab navigieren (Index 5)
-        spielplanVm.SpielGestartet += (_, _) => AusgewaehlterTabIndex = 5;
+        // Nach Spielstart automatisch zum Spielsteuerungs-Tab navigieren (Index 6)
+        spielplanVm.SpielGestartet += (_, _) => AusgewaehlterTabIndex = 6;
 
         // Aus der Turnierverwaltung zur Gruppenauslosung (Index 2) springen
         turnierVerwaltungVm.ZuGruppenauslosungGewuenscht += (_, _) => AusgewaehlterTabIndex = 2;
@@ -100,4 +107,18 @@ public partial class BedienWindowViewModel : ObservableObject
 
     /// <summary>Navigiert zu einem bestimmten Tab per Index.</summary>
     public void NavigiereZuTab(int index) => AusgewaehlterTabIndex = index;
+
+    // ──── Beenden ────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Ausgelöst, wenn der Nutzer über den „Beenden"-Button das Programm schließen möchte.
+    /// Die Bestätigungsabfrage und das tatsächliche Schließen beider Fenster übernimmt das
+    /// Bedien-Fenster selbst (Closing-Handler), damit dieselbe Rückfrage auch beim Schließen
+    /// über die Fenster-Titelleiste (Alt+F4, „X") greift.
+    /// </summary>
+    public event EventHandler? BeendenAngefordert;
+
+    /// <summary>Fordert das Beenden des Programms an.</summary>
+    [RelayCommand]
+    private void Beenden() => BeendenAngefordert?.Invoke(this, EventArgs.Empty);
 }

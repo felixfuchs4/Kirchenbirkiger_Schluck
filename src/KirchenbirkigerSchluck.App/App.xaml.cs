@@ -120,6 +120,7 @@ public partial class App : Application
         services.AddSingleton<GruppenAuslosungViewModel>();
         services.AddSingleton<SpielplanViewModel>();
         services.AddSingleton<TabellenViewModel>();
+        services.AddSingleton<StatistikViewModel>();
         services.AddSingleton<SpielsteuerungViewModel>();
         services.AddSingleton<KorrekturViewModel>();
         services.AddSingleton<SiegerehrungViewModel>();

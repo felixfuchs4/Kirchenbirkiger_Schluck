@@ -1,0 +1,303 @@
+<UserControl x:Class="KirchenbirkigerSchluck.App.Views.Bedienung.StatistikView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:gemeinsam="clr-namespace:KirchenbirkigerSchluck.App.Views.Gemeinsam">
+    <!--
+        Datei:   StatistikView.xaml
+        Zweck:   Live-Spieler- und Team-Statistik (Individualwertung, Team-Trefferquote)
+        Bereich: Präsentation – Bedienungs-Views
+    -->
+    <UserControl.Resources>
+        <!-- Moduswechsel-Button: aktiv golden hervorgehoben, inaktiv dezent -->
+        <Style x:Key="ModusButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+            <Setter Property="Margin" Value="4,0,0,0" />
+            <Setter Property="Foreground" Value="{StaticResource PinselTextGedaempft}" />
+        </Style>
+
+        <!-- Klickbare Team-Kopfzeile: chromelos, volle Breite, Hover-Hervorhebung -->
+        <Style x:Key="TeamZeileButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="16,10" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource PinselFlaecheHover}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- ── Kopfzeile: Gesamtstatistik + Moduswechsel ────────────────────────── -->
+        <materialDesign:Card Grid.Row="0" Padding="20,16" Margin="0,0,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <StackPanel Margin="0,0,32,0">
+                        <TextBlock Text="Versuche" FontSize="12" Foreground="{StaticResource PinselTextGedaempft}" />
+                        <TextBlock Text="{Binding GesamtVersuche}" FontSize="22" FontWeight="Bold" />
+                    </StackPanel>
+                    <StackPanel Margin="0,0,32,0">
+                        <TextBlock Text="Treffer" FontSize="12" Foreground="{StaticResource PinselTextGedaempft}" />
+                        <TextBlock Text="{Binding GesamtTreffer}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource PinselAkzent}" />
+                    </StackPanel>
+                    <StackPanel Margin="0,0,32,0">
+                        <TextBlock Text="Quote" FontSize="12" Foreground="{StaticResource PinselTextGedaempft}" />
+                        <TextBlock Text="{Binding GesamtQuoteAbsolutText}" FontSize="22" FontWeight="Bold" />
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Quote %" FontSize="12" Foreground="{StaticResource PinselTextGedaempft}" />
+                        <TextBlock Text="{Binding GesamtQuoteProzentText}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource PinselAkzent}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="Tabellenansicht"
+                            Command="{Binding TabellenAnsichtWaehlenCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ModusButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IstTabellenModus}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource PinselAkzent}" />
+                                        <Setter Property="FontWeight" Value="Bold" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="Team-Ansicht"
+                            Command="{Binding TeamAnsichtWaehlenCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ModusButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IstTeamModus}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource PinselAkzent}" />
+                                        <Setter Property="FontWeight" Value="Bold" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </materialDesign:Card>
+
+        <!-- ── Inhalt ────────────────────────────────────────────────────────────── -->
+        <Grid Grid.Row="1">
+            <gemeinsam:LeererZustand Symbol="ChartBoxOutline"
+                                     Titel="Noch keine Statistik"
+                                     Hinweis="Statistiken erscheinen, sobald Teams und Spieler angelegt sind."
+                                     Visibility="{Binding HatDaten, Converter={StaticResource InverseBoolToVisibility}}" />
+
+            <!-- Tabellenansicht: flache Rangliste aller Spieler -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          Visibility="{Binding IstTabellenModus, Converter={StaticResource BoolToVisibility}}">
+                <materialDesign:Card Padding="0">
+                    <StackPanel>
+                        <!-- Spaltenkopf -->
+                        <Grid Margin="16,14,16,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="36" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="45" />
+                                <ColumnDefinition Width="45" />
+                                <ColumnDefinition Width="45" />
+                                <ColumnDefinition Width="45" />
+                                <ColumnDefinition Width="55" />
+                                <ColumnDefinition Width="55" />
+                                <ColumnDefinition Width="70" />
+                                <ColumnDefinition Width="70" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Pl." ToolTip="Platz" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" />
+                            <TextBlock Grid.Column="2" Text="Spieler / Team" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" />
+                            <TextBlock Grid.Column="3" Text="Sp." ToolTip="Spiele" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="4" Text="S." ToolTip="Siege" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="5" Text="U." ToolTip="Unentschieden" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="6" Text="N." ToolTip="Niederlagen" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="7" Text="Vers." ToolTip="Versuche" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="8" Text="Tr." ToolTip="Treffer" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="9" Text="Quote" ToolTip="Trefferquote als Bruch (Treffer/Versuche)" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="10" Text="Quote %" ToolTip="Trefferquote in Prozent" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                        </Grid>
+                        <Separator Margin="16,0" />
+
+                        <ItemsControl ItemsSource="{Binding AlleSpieler}" Margin="0,4,0,12">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="16,7">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="36" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="45" />
+                                            <ColumnDefinition Width="45" />
+                                            <ColumnDefinition Width="45" />
+                                            <ColumnDefinition Width="45" />
+                                            <ColumnDefinition Width="55" />
+                                            <ColumnDefinition Width="55" />
+                                            <ColumnDefinition Width="70" />
+                                            <ColumnDefinition Width="70" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0" Text="{Binding Platz, StringFormat='{}{0}.'}"
+                                                   FontWeight="Bold" Foreground="{StaticResource PinselAkzent}"
+                                                   VerticalAlignment="Center" />
+                                        <Image Grid.Column="1" Source="{Binding LogoPfad, Converter={StaticResource PfadZuBitmap}}"
+                                               Width="24" Height="24" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"
+                                               Visibility="{Binding LogoPfad, Converter={StaticResource PfadZuVisibility}}" />
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding TeamName}" FontSize="11"
+                                                       Foreground="{StaticResource PinselTextGedaempft}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="3" Text="{Binding Spiele}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="4" Text="{Binding Siege}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="5" Text="{Binding Unentschieden}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="6" Text="{Binding Niederlagen}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="7" Text="{Binding Versuche}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="8" Text="{Binding Treffer}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="9" Text="{Binding QuoteAbsolutText}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="10" Text="{Binding QuoteProzentText}" FontWeight="Bold"
+                                                   Foreground="{StaticResource PinselAkzent}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </materialDesign:Card>
+            </ScrollViewer>
+
+            <!-- Team-Ansicht: Teams nach Trefferquote, je Team aufklappbare Spielerliste -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          Visibility="{Binding IstTeamModus, Converter={StaticResource BoolToVisibility}}">
+                <ItemsControl ItemsSource="{Binding Teams}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <materialDesign:Card Margin="0,0,0,8" Padding="0">
+                                <StackPanel>
+                                    <!-- Klickbare Team-Kopfzeile -->
+                                    <Button Command="{Binding UmschaltenCommand}" Style="{StaticResource TeamZeileButtonStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="36" />
+                                                <ColumnDefinition Width="24" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="70" />
+                                                <ColumnDefinition Width="70" />
+                                                <ColumnDefinition Width="80" />
+                                                <ColumnDefinition Width="80" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Grid.Column="0" Text="{Binding Platz, StringFormat='{}{0}.'}"
+                                                       FontWeight="Bold" Foreground="{StaticResource PinselAkzent}"
+                                                       VerticalAlignment="Center" />
+                                            <materialDesign:PackIcon Grid.Column="1" VerticalAlignment="Center" Width="18" Height="18"
+                                                                     Foreground="{StaticResource PinselTextGedaempft}">
+                                                <materialDesign:PackIcon.Style>
+                                                    <Style TargetType="materialDesign:PackIcon">
+                                                        <Setter Property="Kind" Value="ChevronRight" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IstAufgeklappt}" Value="True">
+                                                                <Setter Property="Kind" Value="ChevronDown" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </materialDesign:PackIcon.Style>
+                                            </materialDesign:PackIcon>
+                                            <Image Grid.Column="2" Source="{Binding LogoPfad, Converter={StaticResource PfadZuBitmap}}"
+                                                   Width="26" Height="26" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"
+                                                   Visibility="{Binding LogoPfad, Converter={StaticResource PfadZuVisibility}}" />
+                                            <TextBlock Grid.Column="3" Text="{Binding TeamName}" FontWeight="SemiBold"
+                                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Grid.Column="4" Text="{Binding Versuche}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Foreground="{StaticResource PinselTextGedaempft}" />
+                                            <TextBlock Grid.Column="5" Text="{Binding Treffer}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="6" Text="{Binding QuoteAbsolutText}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="7" Text="{Binding QuoteProzentText}" FontWeight="Bold"
+                                                       Foreground="{StaticResource PinselAkzent}"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </Button>
+
+                                    <!-- Aufgeklappte Spielerliste des Teams -->
+                                    <StackPanel Visibility="{Binding IstAufgeklappt, Converter={StaticResource BoolToVisibility}}">
+                                        <Separator Margin="16,0" />
+                                        <Grid Margin="16,10,16,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="45" />
+                                                <ColumnDefinition Width="45" />
+                                                <ColumnDefinition Width="45" />
+                                                <ColumnDefinition Width="45" />
+                                                <ColumnDefinition Width="55" />
+                                                <ColumnDefinition Width="55" />
+                                                <ColumnDefinition Width="70" />
+                                                <ColumnDefinition Width="70" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Spieler" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" />
+                                            <TextBlock Grid.Column="1" Text="Sp." ToolTip="Spiele" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                                            <TextBlock Grid.Column="2" Text="S." ToolTip="Siege" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                                            <TextBlock Grid.Column="3" Text="U." ToolTip="Unentschieden" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                                            <TextBlock Grid.Column="4" Text="N." ToolTip="Niederlagen" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                                            <TextBlock Grid.Column="5" Text="Vers." ToolTip="Versuche" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                                            <TextBlock Grid.Column="6" Text="Tr." ToolTip="Treffer" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                                            <TextBlock Grid.Column="7" Text="Quote" ToolTip="Trefferquote als Bruch (Treffer/Versuche)" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                                            <TextBlock Grid.Column="8" Text="Quote %" ToolTip="Trefferquote in Prozent" FontWeight="SemiBold" Foreground="{StaticResource PinselTextGedaempft}" HorizontalAlignment="Center" />
+                                        </Grid>
+                                        <Separator Margin="16,0" />
+
+                                        <ItemsControl ItemsSource="{Binding Spieler}" Margin="0,4,0,10">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="16,6">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="45" />
+                                                            <ColumnDefinition Width="45" />
+                                                            <ColumnDefinition Width="45" />
+                                                            <ColumnDefinition Width="45" />
+                                                            <ColumnDefinition Width="55" />
+                                                            <ColumnDefinition Width="55" />
+                                                            <ColumnDefinition Width="70" />
+                                                            <ColumnDefinition Width="70" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding Spiele}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="2" Text="{Binding Siege}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="3" Text="{Binding Unentschieden}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="4" Text="{Binding Niederlagen}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="5" Text="{Binding Versuche}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="6" Text="{Binding Treffer}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="7" Text="{Binding QuoteAbsolutText}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="8" Text="{Binding QuoteProzentText}" FontWeight="Bold"
+                                                                   Foreground="{StaticResource PinselAkzent}"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </StackPanel>
+                            </materialDesign:Card>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

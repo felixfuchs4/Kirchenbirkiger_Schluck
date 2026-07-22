@@ -34,6 +34,9 @@
         <DataTemplate DataType="{x:Type vmBedienung:TabellenViewModel}">
             <viewsBedienung:TabellenView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vmBedienung:StatistikViewModel}">
+            <viewsBedienung:StatistikView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vmBedienung:SpielsteuerungViewModel}">
             <viewsBedienung:SpielsteuerungView />
         </DataTemplate>
@@ -62,6 +65,8 @@
                     <!-- Marken-Header -->
                     <RowDefinition Height="*" />
                     <!-- Navigationspunkte -->
+                    <RowDefinition Height="Auto" />
+                    <!-- Beenden-Button -->
                 </Grid.RowDefinitions>
 
                 <!-- Marken-Header -->
@@ -232,6 +237,15 @@
                     <TabItem>
                         <TabItem.Header>
                             <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ChartBoxOutline" Width="22" Height="22"
+                                                         VerticalAlignment="Center" Margin="0,0,14,0" />
+                                <TextBlock Text="Statistik" VerticalAlignment="Center" FontSize="15" />
+                            </StackPanel>
+                        </TabItem.Header>
+                    </TabItem>
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="PlayCircleOutline" Width="22" Height="22"
                                                          VerticalAlignment="Center" Margin="0,0,14,0" />
                                 <TextBlock Text="Spiel" VerticalAlignment="Center" FontSize="15" />
@@ -266,6 +280,22 @@
                         </TabItem.Header>
                     </TabItem>
                 </TabControl>
+
+                <!-- Beenden-Button: schließt nach Rückfrage Turnierleitung UND Anzeige -->
+                <Button Grid.Row="2"
+                        Command="{Binding BeendenCommand}"
+                        Style="{StaticResource MaterialDesignFlatButton}"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        Foreground="{StaticResource PinselGefahr}"
+                        Padding="24,16"
+                        Margin="0,8,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ExitToApp" Width="22" Height="22"
+                                                 VerticalAlignment="Center" Margin="0,0,14,0" />
+                        <TextBlock Text="Beenden" VerticalAlignment="Center" FontSize="15" />
+                    </StackPanel>
+                </Button>
             </Grid>
         </Border>
 

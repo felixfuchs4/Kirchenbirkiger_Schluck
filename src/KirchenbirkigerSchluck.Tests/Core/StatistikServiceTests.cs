@@ -193,4 +193,146 @@ public class StatistikServiceTests
         _sut.GleichstandPlatz1(turnier).Should().BeEmpty();
         _sut.StechenPlatz1Offen(turnier).Should().BeFalse();
     }
+
+    /// <summary>
+    /// AlleSpielerRangliste muss – im Gegensatz zur Torschützen-Rangliste – auch Spieler ohne
+    /// jeglichen Versuch enthalten, damit die Statistik-Ansicht vor Turnierbeginn nutzbar ist.
+    /// </summary>
+    [Fact]
+    public void AlleSpielerRangliste_SpielerOhneVersuche_WirdMitAufgenommen()
+    {
+        var spielerA = new Spieler { Name = "A" };
+        var spielerOhneVersuch = new Spieler { Name = "Ohne Versuch" };
+        var gegner = new Spieler { Name = "Gegner" };
+        var team = new Team { Name = "T", Spieler = [spielerA, spielerOhneVersuch, gegner] };
+
+        var duellA = new Einzelduell
+        {
+            Spieler1Id = spielerA.Id,
+            Spieler2Id = gegner.Id,
+            Versuche = [new Versuch { Spieler1Getroffen = true, Spieler2Getroffen = false }]
+        };
+
+        var spiel = new Spiel { Einzelduelle = [duellA] };
+        var gruppe = new Gruppe { Spiele = [spiel] };
+        var turnier = new Turnier { Teams = [team], Gruppen = [gruppe] };
+
+        // Torschützen-Rangliste (Zeremonie) schließt Spieler ohne Versuche weiterhin aus
+        _sut.TorschuetzenRangliste(turnier).Should().NotContain(s => s.Name == "Ohne Versuch");
+
+        // AlleSpielerRangliste enthält ihn mit 0/0
+        var alle = _sut.AlleSpielerRangliste(turnier);
+        var ohneVersuch = alle.Single(s => s.Name == "Ohne Versuch");
+        ohneVersuch.Treffer.Should().Be(0);
+        ohneVersuch.Versuche.Should().Be(0);
+        ohneVersuch.Quote.Should().Be(0);
+        ohneVersuch.Platz.Should().BeGreaterThan(0);
+    }
+
+    /// <summary>
+    /// Spiele/Siege/Unentschieden/Niederlagen eines Spielers werden aus dem Ergebnis seiner
+    /// eigenen Einzelduelle abgeleitet (Vergleich von <c>Ergebnis.SiegerId</c> mit der Team-Id,
+    /// für die der Spieler antritt) – unabhängig vom Team-Gesamtergebnis der Partie.
+    /// </summary>
+    [Fact]
+    public void AlleSpielerRangliste_SiegUnentschiedenNiederlage_WerdenProSpielerErmittelt()
+    {
+        var team1Id = Guid.NewGuid();
+        var team2Id = Guid.NewGuid();
+
+        var spielerSieger = new Spieler { Name = "Sieger" };
+        var spielerVerlierer = new Spieler { Name = "Verlierer" };
+        var spielerRemis1 = new Spieler { Name = "Remis1" };
+        var spielerRemis2 = new Spieler { Name = "Remis2" };
+
+        var team1 = new Team { Id = team1Id, Name = "Team1", Spieler = [spielerSieger, spielerRemis1] };
+        var team2 = new Team { Id = team2Id, Name = "Team2", Spieler = [spielerVerlierer, spielerRemis2] };
+
+        var duellGewonnen = new Einzelduell
+        {
+            Spieler1Id = spielerSieger.Id,
+            Spieler2Id = spielerVerlierer.Id,
+            Versuche = [new Versuch { Spieler1Getroffen = true, Spieler2Getroffen = false }],
+            Ergebnis = new EinzelduellErgebnis { SiegerId = team1Id, DuellpunktTeam1 = 1, DuellpunktTeam2 = 0 }
+        };
+        var duellUnentschieden = new Einzelduell
+        {
+            Spieler1Id = spielerRemis1.Id,
+            Spieler2Id = spielerRemis2.Id,
+            Versuche = [new Versuch { Spieler1Getroffen = true, Spieler2Getroffen = true }],
+            Ergebnis = new EinzelduellErgebnis { SiegerId = null, DuellpunktTeam1 = 1, DuellpunktTeam2 = 1 }
+        };
+
+        var spiel = new Spiel { Team1Id = team1Id, Team2Id = team2Id, Einzelduelle = [duellGewonnen, duellUnentschieden] };
+        var gruppe = new Gruppe { Spiele = [spiel] };
+        var turnier = new Turnier { Teams = [team1, team2], Gruppen = [gruppe] };
+
+        var rangliste = _sut.AlleSpielerRangliste(turnier);
+
+        var sieger = rangliste.Single(s => s.Name == "Sieger");
+        sieger.Spiele.Should().Be(1);
+        sieger.Siege.Should().Be(1);
+        sieger.Niederlagen.Should().Be(0);
+        sieger.Unentschieden.Should().Be(0);
+
+        var verlierer = rangliste.Single(s => s.Name == "Verlierer");
+        verlierer.Spiele.Should().Be(1);
+        verlierer.Niederlagen.Should().Be(1);
+
+        var remis1 = rangliste.Single(s => s.Name == "Remis1");
+        remis1.Spiele.Should().Be(1);
+        remis1.Unentschieden.Should().Be(1);
+    }
+
+    /// <summary>
+    /// TeamRangliste sortiert nach Trefferquote des Teams (Summe aller Spieler), unabhängig vom
+    /// Turnier-Wertungskriterium, und enthält auch Teams ohne jeglichen Versuch (0/0).
+    /// </summary>
+    [Fact]
+    public void TeamRangliste_SortiertNachTrefferquote_UndEnthaeltTeamsOhneVersuche()
+    {
+        var teamGut = new Team { Name = "Gut", Spieler = [new Spieler { Name = "G1" }] };
+        var teamSchlecht = new Team { Name = "Schlecht", Spieler = [new Spieler { Name = "S1" }] };
+        var teamOhneVersuch = new Team { Name = "OhneVersuch", Spieler = [new Spieler { Name = "O1" }] };
+        var gegner = new Spieler { Name = "Gegner" };
+        var teamGegner = new Team { Name = "GegnerTeam", Spieler = [gegner] };
+
+        var duellGut = new Einzelduell
+        {
+            Spieler1Id = teamGut.Spieler[0].Id,
+            Spieler2Id = gegner.Id,
+            Versuche = [new Versuch { Spieler1Getroffen = true }, new Versuch { Spieler1Getroffen = true }]
+        };
+        var duellSchlecht = new Einzelduell
+        {
+            Spieler1Id = teamSchlecht.Spieler[0].Id,
+            Spieler2Id = gegner.Id,
+            Versuche = [new Versuch { Spieler1Getroffen = true }, new Versuch { Spieler1Getroffen = false }]
+        };
+
+        var spiel = new Spiel { Einzelduelle = [duellGut, duellSchlecht] };
+        var gruppe = new Gruppe { Spiele = [spiel] };
+        var turnier = new Turnier { Teams = [teamGut, teamSchlecht, teamOhneVersuch, teamGegner], Gruppen = [gruppe] };
+
+        var rangliste = _sut.TeamRangliste(turnier);
+
+        rangliste[0].TeamName.Should().Be("Gut");
+        rangliste.Single(t => t.TeamName == "OhneVersuch").Versuche.Should().Be(0);
+        rangliste.Single(t => t.TeamName == "OhneVersuch").Quote.Should().Be(0);
+    }
+
+    /// <summary>GesamtStatistikErmitteln summiert Treffer und Versuche über alle Spieler des Turniers.</summary>
+    [Fact]
+    public void GesamtStatistikErmitteln_SummiertAlleSpieler()
+    {
+        var turnier = DreiGleichaufSpielerTurnier(out _, out _, out _);
+
+        var gesamt = _sut.GesamtStatistikErmitteln(turnier);
+
+        // 3 Duelle à 5 Versuche: A/B/C treffen je 3-mal, der gemeinsame Gegner nie.
+        // Versuche werden für beide Duellteilnehmer gezählt: 3 Duelle * 2 Spieler * 5 Versuche = 30.
+        gesamt.Treffer.Should().Be(9);
+        gesamt.Versuche.Should().Be(30);
+        gesamt.Quote.Should().BeApproximately(0.3, 0.001);
+    }
 }
