@@ -30,7 +30,7 @@
     <!-- Icon der ausführbaren Datei sowie des Anwendungsfensters -->
     <ApplicationIcon>Resources\Assets\AppIcon.ico</ApplicationIcon>
     <!-- Produktversion (wird vom Installer als AppVersion gespiegelt) -->
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
   </PropertyGroup>
 
 </Project>
